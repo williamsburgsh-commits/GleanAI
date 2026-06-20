@@ -1,0 +1,19 @@
+{
+  "name": "@gleanai/bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GleanAI Telegram bot (Node.js + Telegraf).",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "smoke": "node scripts/smoke.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "telegraf": "^4.16.3"
+  }
+}

@@ -1,0 +1,65 @@
+import { NextResponse } from 'next/server';
+import { getServiceClient } from '@/lib/supabaseServer';
+
+export const runtime = 'nodejs';
+
+const TOP_N = 10;
+
+// GET /api/leaderboard?telegramId=123
+// Returns the top players by points, plus the caller's rank (if provided).
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const telegramId = (searchParams.get('telegramId') || '').trim();
+
+  let supabase;
+  try {
+    supabase = getServiceClient();
+  } catch (err) {
+    console.error('[api/leaderboard] config error', err);
+    return NextResponse.json({ error: 'Server is misconfigured.' }, { status: 500 });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('telegram_id, telegram_username, points')
+      .order('points', { ascending: false })
+      .limit(TOP_N);
+    if (error) throw error;
+
+    const top = (data ?? []).map((u, i) => ({
+      rank: i + 1,
+      telegramId: String(u.telegram_id),
+      username: u.telegram_username as string | null,
+      points: u.points as number,
+    }));
+
+    let myRank: number | null = null;
+    let myPoints = 0;
+    if (telegramId && /^\d+$/.test(telegramId)) {
+      const { data: me, error: meErr } = await supabase
+        .from('users')
+        .select('points')
+        .eq('telegram_id', telegramId)
+        .maybeSingle();
+      if (meErr) throw meErr;
+      if (me) {
+        myPoints = me.points as number;
+        const { count, error: cntErr } = await supabase
+          .from('users')
+          .select('id', { count: 'exact', head: true })
+          .gt('points', myPoints);
+        if (cntErr) throw cntErr;
+        myRank = (count ?? 0) + 1;
+      }
+    }
+
+    return NextResponse.json({ top, myRank, myPoints });
+  } catch (err) {
+    console.error('[api/leaderboard] error', err);
+    return NextResponse.json(
+      { error: 'Could not load leaderboard.' },
+      { status: 500 }
+    );
+  }
+}

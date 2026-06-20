@@ -1,0 +1,19 @@
+{
+  "name": "gleanai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source Telegram bot that onboards new users to Solana through fun quests and mini-games.",
+  "license": "MIT",
+  "workspaces": [
+    "bot",
+    "web"
+  ],
+  "scripts": {
+    "dev:bot": "npm run dev --workspace bot",
+    "dev:web": "npm run dev --workspace web",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
