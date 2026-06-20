@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
+import { useTelegram } from '@/components/TelegramProvider';
 import { getTelegramId } from '@/lib/phantom';
 import { SPRINT_ACTIONS, TOTAL_ACTIONS } from '@/lib/sprintActions';
 import { formatDuration } from '@/lib/format';
@@ -19,6 +20,9 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function SprintPage() {
+  const { inTelegram } = useTelegram();
+  const homeHref = inTelegram ? '/app' : '/play';
+
   const [phase, setPhase] = useState<Phase>('idle');
   const [step, setStep] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -128,12 +132,18 @@ export default function SprintPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col px-4 py-6 sm:px-6">
-      <header className="mb-6 flex items-center justify-between">
-        <Link href="/play" className="font-display text-xs text-phosphor glow-text">
-          GLEAN<span className="text-magenta">AI</span>
+      <header className="mb-6 flex items-center justify-between gap-3">
+        <Link
+          href={homeHref}
+          className="crt-tag border-phosphor/40 bg-phosphor/10 text-phosphor transition-colors hover:bg-phosphor/20"
+        >
+          ◂ Menu
         </Link>
+        <span className="font-display text-xs text-phosphor glow-text">
+          GLEAN<span className="text-magenta">AI</span>
+        </span>
         <span className="crt-tag border-magenta/40 bg-magenta/10 text-magenta">
-          SOLANA SPRINT
+          SPRINT
         </span>
       </header>
 
@@ -248,8 +258,8 @@ export default function SprintPage() {
                   Nice run! Open GleanAI from the Telegram bot to save your time,
                   earn points, and get a shareable card.
                 </p>
-                <Link href="/" className="arcade-btn">
-                  ◂ Back to start
+                <Link href={homeHref} className="arcade-btn">
+                  ◂ Back to menu
                 </Link>
               </div>
             ) : error ? (
@@ -267,6 +277,12 @@ export default function SprintPage() {
                     view card
                   </Link>
                 ) : null}
+                <Link
+                  href={homeHref}
+                  className="text-[11px] uppercase tracking-[0.25em] text-ash hover:text-phosphor"
+                >
+                  ◂ menu
+                </Link>
               </div>
             )}
 
