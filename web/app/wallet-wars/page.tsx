@@ -19,7 +19,7 @@ interface BattleHistoryRow {
 }
 
 export default function WalletWarsPage() {
-  const { inTelegram } = useTelegram();
+  const { inTelegram, player, loading: tgLoading } = useTelegram();
   const homeHref = inTelegram ? '/app' : '/play';
 
   const [telegramId, setTelegramId] = useState<string | null>(null);
@@ -66,14 +66,15 @@ export default function WalletWarsPage() {
   }, []);
 
   useEffect(() => {
-    const tg = getTelegramId();
+    if (tgLoading) return;
+    const tg = player?.telegramId ?? getTelegramId();
     setTelegramId(tg);
     if (tg) {
       loadFighter(tg).catch((e) => setError(e.message));
       loadQuests(tg);
       loadHistory(tg);
     }
-  }, [loadFighter, loadQuests, loadHistory]);
+  }, [tgLoading, player?.telegramId, loadFighter, loadQuests, loadHistory]);
 
   const scan = async () => {
     if (!telegramId) return;

@@ -352,6 +352,38 @@
     animation: battleFlash 0.15s steps(1) 1;
   }
 
+  @keyframes battleSlideLeft {
+    from { transform: translateX(-110%); opacity: 0.6; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes battleSlideRight {
+    from { transform: translateX(110%); opacity: 0.6; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes battleWinnerPop {
+    from { transform: scale(1); }
+    to { transform: scale(1.06); }
+  }
+
+  .battle-card-slot {
+    min-width: 0;
+    transform: translateX(0);
+  }
+
+  .battle-enter-left {
+    animation: battleSlideLeft 0.55s ease-out both;
+  }
+
+  .battle-enter-right {
+    animation: battleSlideRight 0.55s ease-out both;
+  }
+
+  .battle-winner-pop {
+    animation: battleWinnerPop 0.45s ease-out forwards;
+  }
+
   @keyframes battleFlash {
     0% { box-shadow: inset 0 0 0 0 transparent; }
     50% { box-shadow: inset 0 0 80px 20px rgba(39, 255, 125, 0.45); }
@@ -363,7 +395,10 @@
       animation: none;
       opacity: 0.3;
     }
-    .animate-battle-shake {
+    .animate-battle-shake,
+    .battle-enter-left,
+    .battle-enter-right,
+    .battle-winner-pop {
       animation: none !important;
     }
   }
