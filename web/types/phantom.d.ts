@@ -6,6 +6,10 @@ interface PhantomProvider {
   isPhantom?: boolean;
   connect(opts?: { onlyIfTrusted?: boolean }): Promise<PhantomConnectResponse>;
   disconnect(): Promise<void>;
+  signAndSendTransaction(
+    transaction: import('@solana/web3.js').Transaction,
+    opts?: { skipPreflight?: boolean }
+  ): Promise<{ signature: string }>;
 }
 
 interface Window {

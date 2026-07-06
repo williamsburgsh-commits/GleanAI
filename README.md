@@ -4,8 +4,9 @@
 
 GleanAI guides newcomers through real Solana on-chain actions (create a wallet, get
 SOL, swap tokens, stake, mint an NFT) framed as fun quests. Users earn points, climb
-a leaderboard, and earn SOL rewards. A companion web app handles wallet connection,
-quest verification, and a reaction-time mini-game called **Solana Sprint**.
+a leaderboard, and earn SOL rewards. The main game is **Wallet Wars** — your on-chain
+history becomes a fighter card you battle with. A companion web app handles wallet
+connection, quest verification, and the legacy **Solana Sprint** side mode.
 
 This repo is built **incrementally** — each layer is shipped and tested before the
 next one starts.
@@ -66,6 +67,16 @@ flowchart TD
 - [x] **6. Admin dashboard** (password-gated `/admin` for manual reward payouts)
 - [x] **7. Telegram Mini App** (`/app` in-Telegram experience, secure `initData` auth, launch button)
 - [x] **8. Leveling system** (points-based levels + titles, shown in Mini App and `/points`)
+- [x] **9. Wallet Wars** (fighter scan, GSAP battles, bot/friend/random match, badge mint, 5 new quests)
+
+### Wallet Wars env vars (optional)
+
+| Variable | Purpose |
+| -------- | ------- |
+| `FIGHTER_RESCAN_HOURS` | Cooldown between wallet rescans (default `24`) |
+| `MAX_BATTLES_PER_DAY` | Daily battle cap per user (default `10`) |
+| `TELEGRAM_COMMUNITY_CHAT_ID` | Telegram group/channel ID for `join-community` quest |
+| `WEB_APP_URL` | HTTPS base URL for battle invite share links |
 
 ## Getting started
 
@@ -93,6 +104,7 @@ Apply it with the Supabase CLI:
 ```bash
 supabase db push          # apply migrations to the linked project
 psql "$DATABASE_URL" -f supabase/seed.sql   # load the 10 quests
+psql "$DATABASE_URL" -f supabase/seed_wallet_wars.sql   # Wallet Wars quests
 ```
 
 …or paste the SQL files into the Supabase Studio SQL editor (migration first, then seed).
@@ -109,6 +121,10 @@ psql "$DATABASE_URL" -f supabase/seed.sql   # load the 10 quests
 | `sprint_runs`       | Solana Sprint results (time, actions, result card URL)    |
 | `rewards`           | Manual SOL payout tracking for the admin dashboard        |
 | `admins`            | Telegram IDs allowed to use the admin dashboard           |
+| `fighter_cards`     | Wallet Wars fighter stats per user                        |
+| `wallet_scans`      | Audit log of on-chain wallet scans                        |
+| `battles`           | Wallet Wars battle results                                |
+| `battle_invites`    | Friend challenge invite codes                             |
 
 > Row Level Security is enabled on every table. Only the `quests` catalog is publicly
 > readable; all other access goes through the **service-role key, server-side only**

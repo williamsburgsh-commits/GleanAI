@@ -1,0 +1,10 @@
+{
+  "name": "Glean Fighter Badge",
+  "symbol": "GLEANBADGE",
+  "description": "Official Wallet Wars fighter credential minted on GleanAI devnet.",
+  "image": "https://api.dicebear.com/7.x/pixel-art/png?seed=GleanFighterBadge",
+  "attributes": [
+    { "trait_type": "Game", "value": "Wallet Wars" },
+    { "trait_type": "Network", "value": "Solana Devnet" }
+  ]
+}

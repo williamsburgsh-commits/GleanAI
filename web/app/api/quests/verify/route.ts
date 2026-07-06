@@ -6,6 +6,7 @@ import {
   recordCompletion,
 } from '@/lib/quests.server';
 import { runVerification } from '@/lib/solana/verify';
+import { getUsedTxSignaturesForQuestType } from '@/lib/telegramCommunity';
 
 export const runtime = 'nodejs';
 
@@ -66,10 +67,17 @@ export async function POST(request: Request) {
     // Run the on-chain check (or quick pass for wallet_created).
     let result;
     try {
-      result = await runVerification(
-        quest.verification_type,
-        user.wallet_address
-      );
+      const excludeTxSignatures = ['token_swap', 'sol_stake', 'nft_mint'].includes(
+        quest.verification_type
+      )
+        ? await getUsedTxSignaturesForQuestType(user.id, quest.verification_type)
+        : new Set<string>();
+
+      result = await runVerification(quest.verification_type, user.wallet_address, {
+        questSlug: quest.slug,
+        telegramId,
+        excludeTxSignatures,
+      });
     } catch (err) {
       console.error('[api/quests/verify] on-chain error', err);
       return NextResponse.json(

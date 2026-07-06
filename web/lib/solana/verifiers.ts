@@ -1,6 +1,7 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { getConnection } from './connection';
 import {
+  GLEAN_BADGE_NAME,
   MIN_FUNDED_LAMPORTS,
   SIGNATURE_SCAN_LIMIT,
   STAKE_PROGRAM_ID,
@@ -22,7 +23,6 @@ function toPublicKey(address: string): PublicKey {
   }
 }
 
-// Wallet holds at least the minimum SOL.
 export async function verifyWalletFunded(
   walletAddress: string,
   conn: Connection = getConnection()
@@ -40,30 +40,35 @@ export async function verifyWalletFunded(
   };
 }
 
-// Scans recent transactions for an instruction touching a known program set.
-async function scanRecentForProgram(
+function getAllInstructions(
+  tx: NonNullable<Awaited<ReturnType<Connection['getParsedTransaction']>>>
+) {
+  const message = tx.transaction.message;
+  return [
+    ...message.instructions,
+    ...(tx.meta?.innerInstructions?.flatMap((i) => i.instructions) ?? []),
+  ];
+}
+
+async function scanSignaturesForProgram(
   walletAddress: string,
   programIds: Set<string>,
-  conn: Connection
+  conn: Connection,
+  options?: { excludeSignatures?: Set<string>; limit?: number }
 ): Promise<string | null> {
   const owner = toPublicKey(walletAddress);
-  const sigs = await conn.getSignaturesForAddress(owner, {
-    limit: SIGNATURE_SCAN_LIMIT,
-  });
+  const limit = options?.limit ?? SIGNATURE_SCAN_LIMIT;
+  const exclude = options?.excludeSignatures ?? new Set<string>();
+  const sigs = await conn.getSignaturesForAddress(owner, { limit });
 
   for (const sigInfo of sigs) {
-    if (sigInfo.err) continue;
+    if (sigInfo.err || exclude.has(sigInfo.signature)) continue;
     const tx = await conn.getParsedTransaction(sigInfo.signature, {
       maxSupportedTransactionVersion: 0,
     });
     if (!tx) continue;
 
-    const message = tx.transaction.message;
-    const instructions = [
-      ...message.instructions,
-      ...(tx.meta?.innerInstructions?.flatMap((i) => i.instructions) ?? []),
-    ];
-    const hit = instructions.some((ix) =>
+    const hit = getAllInstructions(tx).some((ix) =>
       programIds.has(ix.programId.toBase58())
     );
     if (hit) return sigInfo.signature;
@@ -71,12 +76,56 @@ async function scanRecentForProgram(
   return null;
 }
 
-// A swap = a recent tx invoking a known DEX program.
+async function scanAllMatchingSignatures(
+  walletAddress: string,
+  programIds: Set<string>,
+  conn: Connection,
+  limit = SIGNATURE_SCAN_LIMIT
+): Promise<string[]> {
+  const owner = toPublicKey(walletAddress);
+  const sigs = await conn.getSignaturesForAddress(owner, { limit });
+  const found: string[] = [];
+
+  for (const sigInfo of sigs) {
+    if (sigInfo.err) continue;
+    const tx = await conn.getParsedTransaction(sigInfo.signature, {
+      maxSupportedTransactionVersion: 0,
+    });
+    if (!tx) continue;
+    const hit = getAllInstructions(tx).some((ix) =>
+      programIds.has(ix.programId.toBase58())
+    );
+    if (hit) found.push(sigInfo.signature);
+  }
+  return found;
+}
+
+function hasMetadataCreateInstruction(
+  tx: NonNullable<Awaited<ReturnType<Connection['getParsedTransaction']>>>
+): boolean {
+  for (const ix of getAllInstructions(tx)) {
+    if (ix.programId.toBase58() !== TOKEN_METADATA_PROGRAM_ID) continue;
+    if ('parsed' in ix && ix.parsed) {
+      const type = (ix.parsed as { type?: string }).type ?? '';
+      if (/create|mint|metadata/i.test(type)) return true;
+    }
+    // Unparsed metadata CPI still counts as NFT activity.
+    if (!('parsed' in ix)) return true;
+  }
+  return false;
+}
+
 export async function verifyTokenSwap(
   walletAddress: string,
-  conn: Connection = getConnection()
+  conn: Connection = getConnection(),
+  excludeSignatures: Set<string> = new Set()
 ): Promise<VerifyResult> {
-  const sig = await scanRecentForProgram(walletAddress, SWAP_PROGRAM_IDS, conn);
+  const sig = await scanSignaturesForProgram(
+    walletAddress,
+    SWAP_PROGRAM_IDS,
+    conn,
+    { excludeSignatures }
+  );
   return sig
     ? { passed: true, detail: 'Found a swap via a known DEX.', txSignature: sig }
     : {
@@ -85,40 +134,122 @@ export async function verifyTokenSwap(
       };
 }
 
-// An NFT mint = a recent tx invoking the Token Metadata program.
-export async function verifyNftMint(
+export async function verifySecondTokenSwap(
   walletAddress: string,
-  conn: Connection = getConnection()
+  conn: Connection = getConnection(),
+  excludeSignatures: Set<string> = new Set()
 ): Promise<VerifyResult> {
-  const sig = await scanRecentForProgram(
-    walletAddress,
-    new Set([TOKEN_METADATA_PROGRAM_ID]),
-    conn
-  );
-  return sig
-    ? { passed: true, detail: 'Found an NFT mint/metadata action.', txSignature: sig }
+  const sigs = await scanAllMatchingSignatures(walletAddress, SWAP_PROGRAM_IDS, conn);
+  const second = sigs.find((s) => !excludeSignatures.has(s));
+  return second
+    ? { passed: true, detail: 'Found a second distinct swap.', txSignature: second }
     : {
         passed: false,
-        detail: `No NFT mint found in the last ${SIGNATURE_SCAN_LIMIT} transactions.`,
+        detail: 'Complete a new swap that differs from your first swap quest.',
       };
 }
 
-// A stake action = a recent tx invoking the native Stake program.
-// We scan recent signatures (bounded) instead of getProgramAccounts, which is
-// far too compute-heavy on the Stake program and gets rate-limited.
-export async function verifySolStake(
+export async function verifyNftMint(
+  walletAddress: string,
+  conn: Connection = getConnection(),
+  excludeSignatures: Set<string> = new Set()
+): Promise<VerifyResult> {
+  const owner = toPublicKey(walletAddress);
+  const sigs = await conn.getSignaturesForAddress(owner, {
+    limit: SIGNATURE_SCAN_LIMIT,
+  });
+
+  for (const sigInfo of sigs) {
+    if (sigInfo.err || excludeSignatures.has(sigInfo.signature)) continue;
+    const tx = await conn.getParsedTransaction(sigInfo.signature, {
+      maxSupportedTransactionVersion: 0,
+    });
+    if (!tx) continue;
+    if (hasMetadataCreateInstruction(tx)) {
+      return {
+        passed: true,
+        detail: 'Found an NFT mint/metadata create action.',
+        txSignature: sigInfo.signature,
+      };
+    }
+  }
+
+  return {
+    passed: false,
+    detail: `No NFT mint found in the last ${SIGNATURE_SCAN_LIMIT} transactions.`,
+  };
+}
+
+export async function verifyGleanFighterBadge(
   walletAddress: string,
   conn: Connection = getConnection()
 ): Promise<VerifyResult> {
-  const sig = await scanRecentForProgram(
+  const owner = toPublicKey(walletAddress);
+  const sigs = await conn.getSignaturesForAddress(owner, { limit: SIGNATURE_SCAN_LIMIT });
+
+  for (const sigInfo of sigs) {
+    if (sigInfo.err) continue;
+    const tx = await conn.getParsedTransaction(sigInfo.signature, {
+      maxSupportedTransactionVersion: 0,
+    });
+    if (!tx) continue;
+
+    const touchesMetadata = getAllInstructions(tx).some(
+      (ix) => ix.programId.toBase58() === TOKEN_METADATA_PROGRAM_ID
+    );
+    if (!touchesMetadata) continue;
+
+    const logs = tx.meta?.logMessages ?? [];
+    const logHit = logs.some((l) => l.includes(GLEAN_BADGE_NAME));
+    if (logHit || hasMetadataCreateInstruction(tx)) {
+      return {
+        passed: true,
+        detail: 'Glean Fighter Badge mint detected.',
+        txSignature: sigInfo.signature,
+      };
+    }
+  }
+
+  return {
+    passed: false,
+    detail: 'Mint your Glean Fighter Badge from the Wallet Wars mint page.',
+  };
+}
+
+export async function verifySolStake(
+  walletAddress: string,
+  conn: Connection = getConnection(),
+  excludeSignatures: Set<string> = new Set()
+): Promise<VerifyResult> {
+  const sig = await scanSignaturesForProgram(
     walletAddress,
     new Set([STAKE_PROGRAM_ID]),
-    conn
+    conn,
+    { excludeSignatures }
   );
   return sig
     ? { passed: true, detail: 'Found a staking action.', txSignature: sig }
     : {
         passed: false,
         detail: `No staking activity found in the last ${SIGNATURE_SCAN_LIMIT} transactions.`,
+      };
+}
+
+export async function verifySecondSolStake(
+  walletAddress: string,
+  conn: Connection = getConnection(),
+  excludeSignatures: Set<string> = new Set()
+): Promise<VerifyResult> {
+  const sigs = await scanAllMatchingSignatures(
+    walletAddress,
+    new Set([STAKE_PROGRAM_ID]),
+    conn
+  );
+  const second = sigs.find((s) => !excludeSignatures.has(s));
+  return second
+    ? { passed: true, detail: 'Found a second distinct stake action.', txSignature: second }
+    : {
+        passed: false,
+        detail: 'Stake again with a new transaction to complete this quest.',
       };
 }

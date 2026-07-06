@@ -69,13 +69,13 @@ export default function Home() {
           <span className="coin-blink">insert wallet to start</span>
         </p>
         <h1 className="font-pixel text-2xl leading-[1.7] text-bone sm:text-4xl sm:leading-[1.5]">
-          <span className="glow-text text-phosphor">SPEEDRUN</span>
+          <span className="glow-text text-phosphor">WALLET</span>
           <br />
-          <span className="text-magenta">SOLANA</span>
+          <span className="text-magenta">WARS</span>
         </h1>
         <p className="mx-auto mt-5 max-w-md font-term text-[18px] leading-snug text-ash">
-          Learn Solana by doing. Clear real on-chain quests, bank points, and
-          race the clock in the Solana Sprint.
+          Your on-chain history becomes your fighter. Complete real Solana quests,
+          battle opponents, and climb the leaderboard.
         </p>
 
         {/* Hi-score readout */}
@@ -95,10 +95,13 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col items-center gap-3">
           <ConnectButton cluster={cluster} />
-          <p className="mt-3 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
-            powered by phantom · mobile deeplink
+          <Link href="/wallet-wars" className="arcade-btn-cyan text-[10px]">
+            Enter Wallet Wars
+          </Link>
+          <p className="font-term text-[14px] uppercase tracking-[0.2em] text-ash">
+            powered by phantom · devnet
           </p>
         </div>
       </section>

@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         description: q.description,
         points: q.points,
         orderIndex: q.order_index,
-        autoVerifiable: isAutoVerifiable(q.verification_type),
+        autoVerifiable: isAutoVerifiable(q.verification_type, q.slug),
         completed: completed.has(q.id),
       })),
     });

@@ -102,6 +102,47 @@ export async function applyReferral({ referredUserId, referralCode }) {
     reason: 'referral',
   });
 
+  // Complete refer-friend quest for the referrer.
+  const referQuest = unwrap(
+    await supabase
+      .from('quests')
+      .select('id, slug, points')
+      .eq('slug', 'refer-friend')
+      .eq('is_active', true)
+      .maybeSingle(),
+    'applyReferral:referQuest'
+  );
+
+  if (referQuest) {
+    const { error: qcErr } = await supabase.from('quest_completions').insert({
+      user_id: referrer.id,
+      quest_id: referQuest.id,
+      points_awarded: referQuest.points,
+    });
+    if (!qcErr) {
+      const refUser = unwrap(
+        await supabase.from('users').select('points').eq('id', referrer.id).single(),
+        'applyReferral:refPoints'
+      );
+      unwrap(
+        await supabase
+          .from('users')
+          .update({ points: refUser.points + referQuest.points })
+          .eq('id', referrer.id),
+        'applyReferral:refQuestPoints'
+      );
+      unwrap(
+        await supabase.from('points_ledger').insert({
+          user_id: referrer.id,
+          amount: referQuest.points,
+          reason: 'quest:refer-friend',
+          ref_id: referQuest.id,
+        }),
+        'applyReferral:refLedger'
+      );
+    }
+  }
+
   return { applied: true };
 }
 

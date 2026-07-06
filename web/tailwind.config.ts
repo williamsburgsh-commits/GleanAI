@@ -87,6 +87,24 @@ const config: Config = {
           '0%': { transform: 'translateY(-50%)' },
           '100%': { transform: 'translateY(0%)' },
         },
+        holoShimmer: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '100%': { backgroundPosition: '200% 50%' },
+        },
+        battleShake: {
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '20%': { transform: 'translate(-4px, 2px)' },
+          '40%': { transform: 'translate(4px, -2px)' },
+          '60%': { transform: 'translate(-3px, -3px)' },
+          '80%': { transform: 'translate(3px, 2px)' },
+        },
+        shatter: {
+          '0%': { clipPath: 'inset(0 0 0 0)', opacity: '1' },
+          '100%': {
+            clipPath: 'polygon(0% 0%, 20% 5%, 5% 25%, 30% 40%, 10% 60%, 40% 80%, 0% 100%, 100% 100%, 95% 70%, 80% 50%, 100% 20%, 70% 0%)',
+            opacity: '0',
+          },
+        },
       },
       animation: {
         flicker: 'flicker 8s infinite',
@@ -96,6 +114,9 @@ const config: Config = {
         marquee: 'marquee 24s linear infinite',
         glitch: 'glitch 0.32s steps(2) 1',
         scanroll: 'scanroll 8s linear infinite',
+        'holo-shimmer': 'holoShimmer 3s linear infinite',
+        'battle-shake': 'battleShake 0.4s steps(2) 1',
+        shatter: 'shatter 0.6s steps(4) forwards',
       },
       transitionTimingFunction: {
         // no smooth easing — snappy like a coin mech

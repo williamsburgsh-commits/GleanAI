@@ -1,10 +1,14 @@
 import {
   verifyWalletFunded,
   verifyTokenSwap,
+  verifySecondTokenSwap,
   verifySolStake,
+  verifySecondSolStake,
   verifyNftMint,
+  verifyGleanFighterBadge,
   type VerifyResult,
 } from './verifiers';
+import { verifyTelegramCommunityMember } from '@/lib/telegramCommunity';
 
 export type VerificationType =
   | 'wallet_created'
@@ -14,26 +18,44 @@ export type VerificationType =
   | 'nft_mint'
   | 'manual';
 
-// Runs the on-chain check for a quest's verification type.
-// `manual` and `wallet_created` are not on-chain scans:
-//   - wallet_created passes as soon as a wallet is linked (the caller guarantees that)
-//   - manual is never auto-verified here (handled by sprint/referral/admin flows)
+export interface VerificationContext {
+  questSlug?: string;
+  telegramId?: string;
+  excludeTxSignatures?: Set<string>;
+}
+
 export async function runVerification(
   type: VerificationType,
-  walletAddress: string
+  walletAddress: string,
+  ctx: VerificationContext = {}
 ): Promise<VerifyResult> {
+  const exclude = ctx.excludeTxSignatures ?? new Set<string>();
+  const slug = ctx.questSlug ?? '';
+
   switch (type) {
     case 'wallet_created':
       return { passed: true, detail: 'Wallet connected.' };
     case 'wallet_funded':
       return verifyWalletFunded(walletAddress);
     case 'token_swap':
-      return verifyTokenSwap(walletAddress);
+      if (slug === 'swap-again') {
+        return verifySecondTokenSwap(walletAddress, undefined, exclude);
+      }
+      return verifyTokenSwap(walletAddress, undefined, exclude);
     case 'sol_stake':
-      return verifySolStake(walletAddress);
+      if (slug === 'stake-more') {
+        return verifySecondSolStake(walletAddress, undefined, exclude);
+      }
+      return verifySolStake(walletAddress, undefined, exclude);
     case 'nft_mint':
-      return verifyNftMint(walletAddress);
+      if (slug === 'mint-fighter-badge') {
+        return verifyGleanFighterBadge(walletAddress);
+      }
+      return verifyNftMint(walletAddress, undefined, exclude);
     case 'manual':
+      if (slug === 'join-community' && ctx.telegramId) {
+        return verifyTelegramCommunityMember(ctx.telegramId);
+      }
       return {
         passed: false,
         detail: 'This quest is completed outside of on-chain verification.',
@@ -43,6 +65,7 @@ export async function runVerification(
   }
 }
 
-export function isAutoVerifiable(type: VerificationType): boolean {
-  return type !== 'manual';
+export function isAutoVerifiable(type: VerificationType, questSlug?: string): boolean {
+  if (type !== 'manual') return true;
+  return questSlug === 'join-community';
 }
