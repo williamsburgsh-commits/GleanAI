@@ -37,9 +37,10 @@ function seededRandom(seed: string): () => number {
 
 function scaleStats(base: BaseStats, factor: number): BaseStats {
   return {
+    strike: Math.round(base.strike * factor),
     shield: Math.round(base.shield * factor),
     power: Math.round(base.power * factor),
-    strike: Math.round(base.strike * factor),
+    armor: Math.round(base.armor * factor),
     agility: Math.round(base.agility * factor),
   };
 }
@@ -55,7 +56,7 @@ export function createBotFighter(
   const [lo, hi] = SCALE[difficulty];
   const factor = lo + rand() * (hi - lo);
 
-  const avg = playerTotal / 4;
+  const avg = playerTotal / 5;
   const synthetic = metricsToBaseStats({
     balanceLamports: avg * 1e8,
     walletAgeDays: Math.round(avg / 2),
@@ -70,9 +71,10 @@ export function createBotFighter(
 
   const stats = scaleStats(
     {
+      strike: Math.max(synthetic.strike, Math.round(playerStats.strike * factor)),
       shield: Math.max(synthetic.shield, Math.round(playerStats.shield * factor)),
       power: Math.max(synthetic.power, Math.round(playerStats.power * factor)),
-      strike: Math.max(synthetic.strike, Math.round(playerStats.strike * factor)),
+      armor: Math.max(synthetic.armor, Math.round(playerStats.armor * factor)),
       agility: Math.max(synthetic.agility, Math.round(playerStats.agility * factor)),
     },
     1
@@ -97,6 +99,7 @@ export function fighterRowToSnapshot(
     shield: number;
     power: number;
     strike: number;
+    armor?: number;
     agility: number;
     total_score: number;
     rarity: string;
@@ -111,9 +114,10 @@ export function fighterRowToSnapshot(
     walletAddress: row.wallet_address,
     avatarUrl: row.avatar_url,
     stats: {
+      strike: row.strike,
       shield: row.shield,
       power: row.power,
-      strike: row.strike,
+      armor: row.armor ?? 0,
       agility: row.agility,
     },
     totalScore: row.total_score,

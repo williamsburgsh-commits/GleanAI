@@ -20,12 +20,14 @@
     "@supabase/supabase-js": "^2.45.4",
     "bs58": "^6.0.0",
     "gsap": "^3.15.0",
+    "howler": "^2.2.4",
     "next": "^14.2.33",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
+    "@types/howler": "^2.2.13",
     "@types/node": "^20.16.10",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

@@ -22,6 +22,7 @@ export interface FighterCardRow {
   shield: number;
   power: number;
   strike: number;
+  armor: number;
   agility: number;
   total_score: number;
   rarity: FighterRarity;
@@ -111,6 +112,7 @@ export async function scanAndUpsertFighter(
     shield: stats.shield,
     power: stats.power,
     strike: stats.strike,
+    armor: stats.armor,
     agility: stats.agility,
     total_score: stats.totalScore,
     rarity: stats.rarity,
@@ -148,19 +150,30 @@ export async function awardBattlePoints(
   supabase: Supa,
   userId: string,
   amount: number,
-  reason: 'battle:win' | 'battle:loss',
-  refId?: string
-): Promise<void> {
+  reason: 'battle:win' | 'battle:loss' | 'battle:tie',
+  refId?: string,
+  won?: boolean
+): Promise<{ pointsBefore: number; pointsAfter: number; winStreak: number }> {
   const { data: user, error } = await supabase
     .from('users')
-    .select('points')
+    .select('points, win_streak')
     .eq('id', userId)
     .single();
   if (error) throw error;
 
+  const pointsBefore = user.points as number;
+  const pointsAfter = pointsBefore + amount;
+  let winStreak = (user.win_streak as number) ?? 0;
+
+  if (won === true) {
+    winStreak += 1;
+  } else if (won === false) {
+    winStreak = 0;
+  }
+
   await supabase
     .from('users')
-    .update({ points: (user.points as number) + amount })
+    .update({ points: pointsAfter, win_streak: winStreak })
     .eq('id', userId);
 
   await supabase.from('points_ledger').insert({
@@ -169,6 +182,8 @@ export async function awardBattlePoints(
     reason,
     ref_id: refId ?? null,
   });
+
+  return { pointsBefore, pointsAfter, winStreak };
 }
 
 export async function countBattleWins(supabase: Supa, userId: string): Promise<number> {

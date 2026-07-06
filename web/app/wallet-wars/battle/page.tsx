@@ -29,13 +29,20 @@ function invertResolution(r: BattleResolution): BattleResolution {
     rounds,
     challengerWins,
     opponentWins,
-    winner: r.winner === 'challenger' ? 'opponent' : 'challenger',
+    winner:
+      r.winner === 'tie'
+        ? ('tie' as const)
+        : r.winner === 'challenger'
+          ? ('opponent' as const)
+          : ('challenger' as const),
     decidingStat: r.decidingStat,
   };
 }
 import { useTelegram } from '@/components/TelegramProvider';
 import { getTelegramId } from '@/lib/phantom';
 import { BattleSoundProvider, SoundToggle } from '@/components/wallet-wars/SoundToggle';
+import { buildRecapShareText } from '@/components/wallet-wars/battle/BattleRecapCard';
+import { ShareButton } from '@/components/ShareButton';
 import { PixelArrowLeft } from '@/components/PixelArt';
 
 interface BattlePayload {
@@ -44,18 +51,32 @@ interface BattlePayload {
   opponent: FighterCardData & { stats?: unknown };
   resolution: BattleResolution;
   challengerWon: boolean;
+  isTie?: boolean;
   pointsAwarded: number;
+  pointsBefore?: number;
+  winStreak?: number;
+  taunt?: string | null;
+  opponentTaunt?: string | null;
 }
 
 function snapshotToCard(s: BattlePayload['challenger']): FighterCardData {
-  const stats = (s as { stats?: { shield: number; power: number; strike: number; agility: number } }).stats;
+  const stats = (s as {
+    stats?: {
+      strike: number;
+      shield: number;
+      power: number;
+      armor: number;
+      agility: number;
+    };
+  }).stats;
   return {
     name: s.name,
     walletAddress: s.walletAddress,
     avatarUrl: s.avatarUrl,
+    strike: stats?.strike ?? s.strike,
     shield: stats?.shield ?? s.shield,
     power: stats?.power ?? s.power,
-    strike: stats?.strike ?? s.strike,
+    armor: stats?.armor ?? s.armor ?? 0,
     agility: stats?.agility ?? s.agility,
     totalScore: s.totalScore,
     rarity: s.rarity as FighterCardData['rarity'],
@@ -138,22 +159,33 @@ function BattleInner() {
   const opponent = snapshotToCard(payload.opponent);
 
   if (done) {
+    const shareText = buildRecapShareText(
+      challenger,
+      opponent,
+      payload.resolution,
+      payload.challengerWon,
+      payload.isTie ?? false
+    );
+    const resultUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/wallet-wars/result/${payload.battleId}`;
+
     return (
       <main className="mx-auto max-w-2xl px-4 py-8 text-center">
         <FighterCard
-          fighter={payload.challengerWon ? challenger : opponent}
+          fighter={payload.isTie ? challenger : payload.challengerWon ? challenger : opponent}
           variant="profile"
           className="mx-auto mb-6 max-w-[240px]"
         />
         <p className="font-pixel text-phosphor">
-          {payload.challengerWon ? 'YOU WIN' : 'YOU LOSE'}
+          {payload.isTie ? 'DRAW' : payload.challengerWon ? 'YOU WIN' : 'YOU LOSE'}
         </p>
         <p className="mt-2 font-term text-amber">+{payload.pointsAwarded} points</p>
-        <div className="mt-6 flex justify-center gap-3">
-          <Link href={`/wallet-wars/result/${payload.battleId}`} className="chip-btn">
-            SHARE
-          </Link>
-          <Link href={inTelegram ? '/wallet-wars' : '/wallet-wars'} className="arcade-btn">
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <ShareButton
+            url={resultUrl}
+            text="I just fought in Wallet Wars on GleanAI!"
+            twitterText={shareText}
+          />
+          <Link href="/wallet-wars" className="arcade-btn">
             AGAIN
           </Link>
         </div>
@@ -178,7 +210,12 @@ function BattleInner() {
           opponent={opponent}
           resolution={payload.resolution}
           challengerWon={payload.challengerWon}
+          isTie={payload.isTie ?? false}
           pointsAwarded={payload.pointsAwarded}
+          pointsBefore={payload.pointsBefore ?? 0}
+          winStreak={payload.winStreak ?? 0}
+          taunt={payload.taunt}
+          opponentTaunt={payload.opponentTaunt}
           battleId={payload.battleId}
           onDone={() => setDone(true)}
         />

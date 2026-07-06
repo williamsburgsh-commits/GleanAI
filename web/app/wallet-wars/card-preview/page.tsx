@@ -11,17 +11,18 @@ const MOCK: { rarity: FighterRarity; score: number }[] = [
 ];
 
 function mockFighter(rarity: FighterRarity, score: number): FighterCardData {
-  const q = Math.floor(score / 4);
+  const q = Math.floor(score / 5);
   return {
     name: 'Demo…Fighter',
     avatarUrl: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${rarity}`,
+    strike: q,
     shield: q,
     power: q,
-    strike: q,
-    agility: score - q * 3,
+    armor: q,
+    agility: score - q * 4,
     totalScore: score,
     rarity,
-    questBonus: { shield: 10, power: 0, strike: 15, agility: 5 },
+    questBonus: { shield: 10, power: 0, strike: 15, armor: 12, agility: 5 },
   };
 }
 

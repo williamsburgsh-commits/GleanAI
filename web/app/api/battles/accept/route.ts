@@ -12,6 +12,7 @@ import {
   resolveBattle,
   BATTLE_WIN_POINTS,
   BATTLE_LOSS_POINTS,
+  BATTLE_TIE_POINTS,
 } from '@/lib/wallet-wars/battleResolver';
 import { fighterRowToSnapshot } from '@/lib/wallet-wars/botFactory';
 import { getQuestBySlug, recordCompletion } from '@/lib/quests.server';
@@ -22,9 +23,10 @@ function toCardPayload(f: FighterSnapshot) {
     name: f.name,
     walletAddress: f.walletAddress,
     avatarUrl: f.avatarUrl,
+    strike: f.stats.strike,
     shield: f.stats.shield,
     power: f.stats.power,
-    strike: f.stats.strike,
+    armor: f.stats.armor,
     agility: f.stats.agility,
     totalScore: f.totalScore,
     rarity: f.rarity,
@@ -96,8 +98,17 @@ export async function POST(request: Request) {
     const resolution = resolveBattle(challenger, opponent);
 
     const creatorWon = resolution.winner === 'challenger';
-    const creatorPoints = creatorWon ? BATTLE_WIN_POINTS : BATTLE_LOSS_POINTS;
-    const acceptorPoints = creatorWon ? BATTLE_LOSS_POINTS : BATTLE_WIN_POINTS;
+    const isTie = resolution.winner === 'tie';
+    const creatorPoints = isTie
+      ? BATTLE_TIE_POINTS
+      : creatorWon
+        ? BATTLE_WIN_POINTS
+        : BATTLE_LOSS_POINTS;
+    const acceptorPoints = isTie
+      ? BATTLE_TIE_POINTS
+      : creatorWon
+        ? BATTLE_LOSS_POINTS
+        : BATTLE_WIN_POINTS;
 
     const { data: battle, error: battleErr } = await supabase
       .from('battles')
@@ -105,7 +116,7 @@ export async function POST(request: Request) {
         challenger_id: creator.id,
         opponent_id: acceptor.id,
         opponent_type: 'user',
-        winner_id: creatorWon ? creator.id : acceptor.id,
+        winner_id: isTie ? null : creatorWon ? creator.id : acceptor.id,
         stat_results: resolution.rounds,
         points_awarded: creatorPoints,
         status: 'completed',
@@ -120,8 +131,22 @@ export async function POST(request: Request) {
       .update({ accepted_by: acceptor.id, battle_id: battle.id })
       .eq('id', invite.id);
 
-    await awardBattlePoints(supabase, creator.id, creatorPoints, creatorWon ? 'battle:win' : 'battle:loss', battle.id as string);
-    await awardBattlePoints(supabase, acceptor.id, acceptorPoints, creatorWon ? 'battle:loss' : 'battle:win', battle.id as string);
+    await awardBattlePoints(
+      supabase,
+      creator.id,
+      creatorPoints,
+      resolution.winner === 'tie' ? 'battle:tie' : creatorWon ? 'battle:win' : 'battle:loss',
+      battle.id as string,
+      resolution.winner === 'tie' ? undefined : creatorWon
+    );
+    await awardBattlePoints(
+      supabase,
+      acceptor.id,
+      acceptorPoints,
+      resolution.winner === 'tie' ? 'battle:tie' : creatorWon ? 'battle:loss' : 'battle:win',
+      battle.id as string,
+      resolution.winner === 'tie' ? undefined : !creatorWon
+    );
     await awardBattleQuests(supabase, creator, creatorWon);
     await awardBattleQuests(supabase, acceptor, !creatorWon);
 

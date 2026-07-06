@@ -3,16 +3,17 @@
 import { HoloCard } from './HoloCard';
 import { StatBar } from './StatBar';
 import { rarityBorderClass, rarityLabel, type FighterRarity } from '@/lib/wallet-wars/rarity';
-import type { StatKey } from '@/lib/wallet-wars/fighterStats';
+import { STAT_KEYS, type StatKey } from '@/lib/wallet-wars/fighterStats';
 import type { QuestBonus } from '@/lib/wallet-wars/questBoosts';
 
 export interface FighterCardData {
   name: string;
   walletAddress?: string;
   avatarUrl: string;
+  strike: number;
   shield: number;
   power: number;
-  strike: number;
+  armor: number;
   agility: number;
   totalScore: number;
   rarity: FighterRarity;
@@ -24,7 +25,15 @@ interface FighterCardProps {
   variant?: 'profile' | 'battle' | 'mini';
   highlightStats?: Partial<Record<StatKey, 'win' | 'lose'>>;
   shattered?: boolean;
+  cracked?: boolean;
+  worried?: boolean;
+  streakBorder?: 'fire' | 'lightning' | null;
   className?: string;
+  hideStats?: boolean;
+  revealedStats?: Partial<Record<StatKey, boolean>>;
+  displayStats?: Partial<Record<StatKey, number>>;
+  activeStat?: StatKey | null;
+  decidingStat?: boolean;
 }
 
 export function FighterCard({
@@ -32,28 +41,44 @@ export function FighterCard({
   variant = 'profile',
   highlightStats = {},
   shattered = false,
+  cracked = false,
+  worried = false,
+  streakBorder = null,
   className = '',
+  hideStats = false,
+  revealedStats,
+  displayStats,
+  activeStat = null,
+  decidingStat = false,
 }: FighterCardProps) {
   const isMini = variant === 'mini';
-  const stats: { key: StatKey; value: number }[] = [
-    { key: 'shield', value: fighter.shield },
-    { key: 'power', value: fighter.power },
-    { key: 'strike', value: fighter.strike },
-    { key: 'agility', value: fighter.agility },
-  ];
+  const stats = STAT_KEYS.map((key) => ({
+    key,
+    value: fighter[key],
+  }));
 
   const questTotal = fighter.questBonus
     ? fighter.questBonus.shield +
       fighter.questBonus.power +
       fighter.questBonus.strike +
+      fighter.questBonus.armor +
       fighter.questBonus.agility
     : 0;
 
+  const streakClass =
+    streakBorder === 'fire'
+      ? 'battle-streak-fire'
+      : streakBorder === 'lightning'
+        ? 'battle-streak-lightning'
+        : '';
+
   const cardInner = (
     <div
-      className={`relative flex flex-col border-4 bg-[#0d1219] ${rarityBorderClass(fighter.rarity)} ${
+      className={`relative flex flex-col border-4 bg-[#0d1219] ${rarityBorderClass(fighter.rarity)} ${streakClass} ${
         shattered ? 'fighter-shatter' : ''
-      } ${isMini ? 'p-2' : 'p-3'}`}
+      } ${cracked ? 'battle-card-cracked' : ''} ${worried ? 'battle-card-worried' : ''} ${
+        isMini ? 'p-2' : 'p-3'
+      }`}
       style={{ aspectRatio: '2.5 / 3.5' }}
     >
       <div className="border-b-2 border-bone/20 pb-2">
@@ -74,20 +99,29 @@ export function FighterCard({
         <img
           src={fighter.avatarUrl}
           alt=""
-          className="h-full w-full object-cover"
+          className={`h-full w-full object-cover ${worried ? 'opacity-70 grayscale-[30%]' : ''}`}
           style={{ imageRendering: 'pixelated' }}
         />
+        {variant === 'battle' && !worried && !shattered && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden font-pixel text-[6px] text-phosphor battle-victory-pose">
+            ▲▲
+          </div>
+        )}
       </div>
 
-      {!isMini && (
+      {!isMini && !hideStats && (
         <div className="mt-auto space-y-2">
           {stats.map(({ key, value }) => (
             <StatBar
               key={key}
               stat={key}
               value={value}
+              displayValue={displayStats?.[key]}
+              revealed={revealedStats ? revealedStats[key] !== false : true}
               highlight={highlightStats[key] ?? null}
               animate={variant === 'battle'}
+              active={activeStat === key}
+              deciding={decidingStat && activeStat === key}
             />
           ))}
           <div className="flex items-center justify-between border-t-2 border-bone/20 pt-2 font-pixel text-[7px] text-bone/70">

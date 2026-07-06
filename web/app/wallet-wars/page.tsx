@@ -8,6 +8,7 @@ import { useTelegram } from '@/components/TelegramProvider';
 import { getTelegramId, getStoredWallet } from '@/lib/phantom';
 import { QUEST_BOOST_HINTS } from '@/lib/wallet-wars/questBoosts';
 import { PixelArrowLeft, PixelBolt } from '@/components/PixelArt';
+import { TAUNT_PRESETS } from '@/lib/wallet-wars/taunts';
 import type { BotDifficulty } from '@/lib/wallet-wars/botFactory';
 
 interface BattleHistoryRow {
@@ -32,6 +33,7 @@ export default function WalletWarsPage() {
   const [history, setHistory] = useState<BattleHistoryRow[]>([]);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [selectedTaunt, setSelectedTaunt] = useState(TAUNT_PRESETS[0]);
   const [completedQuests, setCompletedQuests] = useState<Set<string>>(new Set());
 
   const loadFighter = useCallback(async (tg: string) => {
@@ -105,7 +107,7 @@ export default function WalletWarsPage() {
       const res = await fetch('/api/battles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId, opponentType: 'bot', difficulty }),
+        body: JSON.stringify({ telegramId, opponentType: 'bot', difficulty, taunt: selectedTaunt }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Battle failed');
@@ -208,6 +210,14 @@ export default function WalletWarsPage() {
         </div>
       )}
 
+      {fighter && fighter.armor === 0 && (
+        <CrtPanel label="RESCAN" tone="amber" className="mb-4">
+          <p className="font-term text-sm">
+            Rescan your fighter to unlock the new ARMOR stat and updated battle order.
+          </p>
+        </CrtPanel>
+      )}
+
       {fighter && (
         <>
           <CrtPanel label="ACTIONS" tone="magenta" className="mb-4">
@@ -232,6 +242,19 @@ export default function WalletWarsPage() {
           </CrtPanel>
 
           <CrtPanel label="BATTLE" tone="phosphor" className="mb-4">
+            <p className="mb-2 font-term text-sm">Pick a taunt (optional):</p>
+            <div className="mb-3 flex flex-wrap gap-1">
+              {TAUNT_PRESETS.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`chip-btn text-[8px] ${selectedTaunt === t ? 'chip-btn-amber' : ''}`}
+                  onClick={() => setSelectedTaunt(t)}
+                >
+                  {t.slice(0, 22)}…
+                </button>
+              ))}
+            </div>
             <p className="mb-3 font-term text-sm">Choose your opponent:</p>
             <div className="grid gap-2 sm:grid-cols-3">
               {(['easy', 'normal', 'hard'] as BotDifficulty[]).map((d) => (

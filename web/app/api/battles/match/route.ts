@@ -12,18 +12,21 @@ import {
   resolveBattle,
   BATTLE_WIN_POINTS,
   BATTLE_LOSS_POINTS,
+  BATTLE_TIE_POINTS,
+  type FighterSnapshot,
 } from '@/lib/wallet-wars/battleResolver';
 import { createBotFighter, fighterRowToSnapshot } from '@/lib/wallet-wars/botFactory';
-import type { FighterSnapshot } from '@/lib/wallet-wars/battleResolver';
+import { randomBotTaunt } from '@/lib/wallet-wars/taunts';
 
 function toCardPayload(f: FighterSnapshot) {
   return {
     name: f.name,
     walletAddress: f.walletAddress,
     avatarUrl: f.avatarUrl,
+    strike: f.stats.strike,
     shield: f.stats.shield,
     power: f.stats.power,
-    strike: f.stats.strike,
+    armor: f.stats.armor,
     agility: f.stats.agility,
     totalScore: f.totalScore,
     rarity: f.rarity,
@@ -103,6 +106,7 @@ export async function POST(request: Request) {
           shield: pick.shield as number,
           power: pick.power as number,
           strike: pick.strike as number,
+          armor: (pick.armor as number) ?? 0,
           agility: pick.agility as number,
           total_score: pick.total_score as number,
           rarity: pick.rarity as string,
@@ -117,7 +121,12 @@ export async function POST(request: Request) {
 
     const resolution = resolveBattle(challenger, opponent);
     const challengerWon = resolution.winner === 'challenger';
-    const pointsForChallenger = challengerWon ? BATTLE_WIN_POINTS : BATTLE_LOSS_POINTS;
+    const isTie = resolution.winner === 'tie';
+    const pointsForChallenger = isTie
+      ? BATTLE_TIE_POINTS
+      : challengerWon
+        ? BATTLE_WIN_POINTS
+        : BATTLE_LOSS_POINTS;
 
     const { data: battle, error: battleErr } = await supabase
       .from('battles')
@@ -127,7 +136,7 @@ export async function POST(request: Request) {
         opponent_type: matched ? 'user' : 'bot',
         bot_seed: matched ? null : opponent.name,
         bot_name: matched ? null : opponent.name,
-        winner_id: challengerWon ? user.id : opponentUserId,
+        winner_id: isTie ? null : challengerWon ? user.id : opponentUserId,
         stat_results: resolution.rounds,
         points_awarded: pointsForChallenger,
         status: 'completed',
@@ -137,12 +146,13 @@ export async function POST(request: Request) {
       .single();
     if (battleErr) throw battleErr;
 
-    await awardBattlePoints(
+    const { pointsBefore, winStreak } = await awardBattlePoints(
       supabase,
       user.id,
       pointsForChallenger,
-      challengerWon ? 'battle:win' : 'battle:loss',
-      battle.id as string
+      isTie ? 'battle:tie' : challengerWon ? 'battle:win' : 'battle:loss',
+      battle.id as string,
+      isTie ? undefined : challengerWon
     );
     await awardBattleQuests(supabase, user, challengerWon);
 
@@ -153,7 +163,11 @@ export async function POST(request: Request) {
       opponent: toCardPayload(opponent),
       resolution,
       challengerWon,
+      isTie,
       pointsAwarded: pointsForChallenger,
+      pointsBefore,
+      winStreak,
+      opponentTaunt: matched ? null : randomBotTaunt(),
       decidingStat: resolution.decidingStat,
     });
   } catch (err) {
