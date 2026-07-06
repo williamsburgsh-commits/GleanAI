@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FighterCard, type FighterCardData } from './FighterCard';
+import { useBattleSound } from './SoundToggle';
 import type { BattleResolution } from '@/lib/wallet-wars/battleResolver';
 import type { StatKey } from '@/lib/wallet-wars/fighterStats';
 
@@ -42,6 +43,12 @@ function roundHighlights(
   return { challenger: {}, opponent: {} };
 }
 
+function delay(ms: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
 export function BattleArena({
   challenger,
   opponent,
@@ -51,91 +58,95 @@ export function BattleArena({
   battleId,
   onDone,
 }: BattleArenaProps) {
+  const sound = useBattleSound();
+  const soundRef = useRef(sound);
+  soundRef.current = sound;
   const [phase, setPhase] = useState<Phase>('intro');
   const [roundIndex, setRoundIndex] = useState(0);
   const [displayPoints, setDisplayPoints] = useState(0);
   const [flash, setFlash] = useState(false);
-  const skippedRef = useRef(false);
+  const cancelledRef = useRef(false);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
   const skip = useCallback(() => {
-    if (skippedRef.current) return;
-    skippedRef.current = true;
+    if (cancelledRef.current) return;
+    cancelledRef.current = true;
+    setFlash(false);
     setPhase('victory');
     setDisplayPoints(pointsAwarded);
-    setFlash(false);
+    soundRef.current.playVictory();
     window.setTimeout(() => {
       setPhase('done');
       onDoneRef.current();
     }, 450);
   }, [pointsAwarded]);
 
-  // Intro → first round
   useEffect(() => {
-    if (skippedRef.current) return;
-    const id = window.setTimeout(() => setPhase('round'), INTRO_MS);
-    return () => window.clearTimeout(id);
-  }, []);
+    cancelledRef.current = false;
+    void soundRef.current.resume();
 
-  // Round loop
-  useEffect(() => {
-    if (skippedRef.current || phase !== 'round') return;
+    const cancelled = () => cancelledRef.current;
+    const sfx = () => soundRef.current;
 
-    if (roundIndex >= resolution.rounds.length) {
-      setPhase('shatter');
-      return;
-    }
+    const run = async () => {
+      await delay(INTRO_MS);
+      if (cancelled()) return;
 
-    const round = resolution.rounds[roundIndex];
-    const deciding = resolution.decidingStat === round.stat;
+      for (let i = 0; i < resolution.rounds.length; i++) {
+        if (cancelled()) return;
 
-    if (deciding) {
-      setFlash(true);
-      setPhase('clash');
-      const clashId = window.setTimeout(() => {
-        if (skippedRef.current) return;
-        setFlash(false);
+        setRoundIndex(i);
         setPhase('round');
-        setRoundIndex((i) => i + 1);
-      }, CLASH_MS);
-      return () => window.clearTimeout(clashId);
-    }
+        sfx().playStat();
 
-    const id = window.setTimeout(() => {
-      if (skippedRef.current) return;
-      setRoundIndex((i) => i + 1);
-    }, ROUND_MS);
-    return () => window.clearTimeout(id);
-  }, [phase, roundIndex, resolution]);
+        const round = resolution.rounds[i];
+        const deciding = resolution.decidingStat === round.stat;
 
-  // Shatter → victory
-  useEffect(() => {
-    if (skippedRef.current || phase !== 'shatter') return;
-    const id = window.setTimeout(() => setPhase('victory'), SHATTER_MS);
-    return () => window.clearTimeout(id);
-  }, [phase]);
-
-  // Victory points count-up → done
-  useEffect(() => {
-    if (skippedRef.current || phase !== 'victory') return;
-
-    const start = Date.now();
-    const tick = window.setInterval(() => {
-      const t = Math.min(1, (Date.now() - start) / VICTORY_MS);
-      setDisplayPoints(Math.round(pointsAwarded * t));
-      if (t >= 1) {
-        window.clearInterval(tick);
-        window.setTimeout(() => {
-          if (skippedRef.current) return;
-          setPhase('done');
-          onDoneRef.current();
-        }, 400);
+        if (deciding) {
+          await delay(ROUND_MS * 0.4);
+          if (cancelled()) return;
+          setFlash(true);
+          setPhase('clash');
+          sfx().playClash();
+          await delay(CLASH_MS);
+          if (cancelled()) return;
+          setFlash(false);
+        } else {
+          await delay(ROUND_MS);
+          if (cancelled()) return;
+        }
       }
-    }, 40);
 
-    return () => window.clearInterval(tick);
-  }, [phase, pointsAwarded]);
+      setPhase('shatter');
+      sfx().playShatter();
+      await delay(SHATTER_MS);
+      if (cancelled()) return;
+
+      setPhase('victory');
+      sfx().playVictory();
+
+      const start = Date.now();
+      while (!cancelled()) {
+        const t = Math.min(1, (Date.now() - start) / VICTORY_MS);
+        setDisplayPoints(Math.round(pointsAwarded * t));
+        if (t >= 1) break;
+        await delay(40);
+      }
+      if (cancelled()) return;
+
+      await delay(400);
+      if (cancelled()) return;
+      setPhase('done');
+      onDoneRef.current();
+    };
+
+    run();
+
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [resolution, pointsAwarded]);
 
   const inRounds = phase === 'round' || phase === 'clash';
   const highlights =
@@ -153,6 +164,7 @@ export function BattleArena({
       className={`relative min-h-[70vh] overflow-hidden px-2 py-6 ${
         phase === 'clash' ? 'animate-battle-shake' : ''
       }`}
+      onPointerDown={() => void soundRef.current.resume()}
     >
       <div
         className={`pointer-events-none absolute inset-0 z-20 ${flash ? 'battle-flash' : ''}`}

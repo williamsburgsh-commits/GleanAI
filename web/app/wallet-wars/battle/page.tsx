@@ -35,7 +35,7 @@ function invertResolution(r: BattleResolution): BattleResolution {
 }
 import { useTelegram } from '@/components/TelegramProvider';
 import { getTelegramId } from '@/lib/phantom';
-import { SoundToggle } from '@/components/wallet-wars/SoundToggle';
+import { BattleSoundProvider, SoundToggle } from '@/components/wallet-wars/SoundToggle';
 import { PixelArrowLeft } from '@/components/PixelArt';
 
 interface BattlePayload {
@@ -162,26 +162,28 @@ function BattleInner() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-2 py-4">
-      <Link href={homeHref} className="mb-2 inline-flex items-center gap-2 font-pixel text-[9px] text-cyan">
-        <span className="inline-block h-4 w-4">
-          <PixelArrowLeft />
-        </span>
-        EXIT
-      </Link>
-      <div className="mb-2 flex justify-end">
-        <SoundToggle />
-      </div>
-      <BattleArena
-        challenger={challenger}
-        opponent={opponent}
-        resolution={payload.resolution}
-        challengerWon={payload.challengerWon}
-        pointsAwarded={payload.pointsAwarded}
-        battleId={payload.battleId}
-        onDone={() => setDone(true)}
-      />
-    </main>
+    <BattleSoundProvider>
+      <main className="mx-auto max-w-3xl px-2 py-4">
+        <Link href={homeHref} className="mb-2 inline-flex items-center gap-2 font-pixel text-[9px] text-cyan">
+          <span className="inline-block h-4 w-4">
+            <PixelArrowLeft />
+          </span>
+          EXIT
+        </Link>
+        <div className="mb-2 flex justify-end">
+          <SoundToggle />
+        </div>
+        <BattleArena
+          challenger={challenger}
+          opponent={opponent}
+          resolution={payload.resolution}
+          challengerWon={payload.challengerWon}
+          pointsAwarded={payload.pointsAwarded}
+          battleId={payload.battleId}
+          onDone={() => setDone(true)}
+        />
+      </main>
+    </BattleSoundProvider>
   );
 }
 
