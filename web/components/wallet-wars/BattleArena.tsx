@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { FighterCard, type FighterCardData } from './FighterCard';
 import { createBattleTimeline } from '@/lib/wallet-wars/battleTimeline';
 import type { BattleResolution } from '@/lib/wallet-wars/battleResolver';
@@ -31,48 +31,54 @@ export function BattleArena({
   const victoryRef = useRef<HTMLParagraphElement>(null);
   const pointsRef = useRef<HTMLParagraphElement>(null);
   const skipRef = useRef<HTMLButtonElement>(null);
-  const [started, setStarted] = useState(false);
+  const timelineStarted = useRef(false);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
-    if (started) return;
-    if (
-      !arenaRef.current ||
-      !challengerRef.current ||
-      !opponentRef.current ||
-      !flashRef.current ||
-      !victoryRef.current ||
-      !pointsRef.current ||
-      !skipRef.current
-    ) {
+    if (timelineStarted.current) return;
+
+    const arena = arenaRef.current;
+    const challengerCard = challengerRef.current;
+    const opponentCard = opponentRef.current;
+    const flash = flashRef.current;
+    const victoryText = victoryRef.current;
+    const pointsEl = pointsRef.current;
+    const skipBtn = skipRef.current;
+
+    if (!arena || !challengerCard || !opponentCard || !flash || !victoryText || !pointsEl || !skipBtn) {
       return;
     }
 
-    setStarted(true);
-    victoryRef.current.textContent = challengerWon ? 'VICTORY' : 'DEFEAT';
+    timelineStarted.current = true;
+    victoryText.textContent = challengerWon ? 'VICTORY' : 'DEFEAT';
 
     const tl = createBattleTimeline(
       {
-        arena: arenaRef.current,
-        challengerCard: challengerRef.current,
-        opponentCard: opponentRef.current,
-        flash: flashRef.current,
-        victoryText: victoryRef.current,
-        pointsEl: pointsRef.current,
-        skipBtn: skipRef.current,
+        arena,
+        challengerCard,
+        opponentCard,
+        flash,
+        victoryText,
+        pointsEl,
+        skipBtn,
       },
       resolution,
       challengerWon,
       pointsAwarded,
-      onDone
+      () => onDoneRef.current()
     );
 
     return () => {
       tl.kill();
     };
-  }, [started, challengerWon, onDone, pointsAwarded, resolution]);
+  }, [challengerWon, pointsAwarded, resolution]);
 
   return (
-    <div ref={arenaRef} className="relative min-h-[70vh] overflow-hidden px-2 py-6">
+    <div
+      ref={arenaRef}
+      className="relative min-h-[70vh] overflow-hidden px-2 py-6 will-change-transform"
+    >
       <div
         ref={flashRef}
         className="pointer-events-none absolute inset-0 z-20"
@@ -87,10 +93,10 @@ export function BattleArena({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div ref={challengerRef}>
+        <div ref={challengerRef} className="will-change-transform">
           <FighterCard fighter={challenger} variant="battle" />
         </div>
-        <div ref={opponentRef}>
+        <div ref={opponentRef} className="will-change-transform">
           <FighterCard fighter={opponent} variant="battle" />
         </div>
       </div>
@@ -100,12 +106,11 @@ export function BattleArena({
           ref={victoryRef}
           className="font-pixel text-lg text-phosphor opacity-0"
           style={{ textShadow: '0 0 12px rgba(39,255,125,0.8)' }}
-        />
-        <p
-          ref={pointsRef}
-          className="mt-2 font-pixel text-sm text-amber"
         >
-          0
+          {challengerWon ? 'VICTORY' : 'DEFEAT'}
+        </p>
+        <p ref={pointsRef} className="mt-2 font-pixel text-sm text-amber">
+          +0
         </p>
         <p className="mt-1 font-term text-sm text-bone/60">Battle #{battleId.slice(0, 8)}</p>
       </div>

@@ -97,9 +97,34 @@ export default function MiniApp() {
   useEffect(() => {
     if (loading) return;
     setWallet(getStoredWallet());
+    if (player?.walletAddress) setWalletLinked(true);
+    if (player?.points) setPoints(player.points);
     loadQuests(telegramId);
     loadLeaderboard(telegramId);
-  }, [loading, telegramId, loadQuests, loadLeaderboard]);
+  }, [loading, telegramId, loadQuests, loadLeaderboard, player?.walletAddress, player?.points]);
+
+  // After connecting wallet in the external browser, refresh when user returns.
+  useEffect(() => {
+    if (!inTelegram || !telegramId) return;
+
+    const refresh = () => {
+      if (document.visibilityState === 'visible') {
+        loadQuests(telegramId);
+        loadLeaderboard(telegramId);
+      }
+    };
+
+    document.addEventListener('visibilitychange', refresh);
+    try {
+      webApp?.onEvent?.('viewportChanged', refresh);
+    } catch {
+      /* older Telegram clients */
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [inTelegram, telegramId, loadQuests, loadLeaderboard, webApp]);
 
   function openWalletConnect() {
     const origin = window.location.origin;
@@ -304,12 +329,20 @@ export default function MiniApp() {
             </div>
             <p className="font-term text-[16px] leading-snug text-ash">
               Connect a Phantom wallet to unlock on-chain quests. This opens in your
-              browser (wallets can&apos;t run inside Telegram).
+              browser (wallets can&apos;t run inside Telegram). After connecting,
+              come back here — your progress syncs automatically.
             </p>
           </div>
           <button onClick={openWalletConnect} className="arcade-btn w-full">
             <span className="h-3 w-3 text-phosphor"><PixelWallet /></span>
             Connect Wallet
+          </button>
+          <button
+            type="button"
+            onClick={() => telegramId && loadQuests(telegramId)}
+            className="chip-btn-amber mt-3 w-full"
+          >
+            I connected — refresh
           </button>
         </CrtPanel>
       ) : null}
