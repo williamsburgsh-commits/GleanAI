@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
 import { Ticker } from '@/components/Ticker';
-import { ConnectButton } from '@/components/ConnectButton';
+import { HomeHeroCta } from '@/components/HomeHeroCta';
 import { TelegramCapture } from '@/components/TelegramCapture';
 import {
   PixelWallet,
@@ -95,15 +95,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <ConnectButton cluster={cluster} />
-          <Link href="/wallet-wars" className="arcade-btn-cyan text-[10px]">
-            Enter Wallet Wars
-          </Link>
-          <p className="font-term text-[14px] uppercase tracking-[0.2em] text-ash">
-            powered by phantom · devnet
-          </p>
-        </div>
+        <HomeHeroCta cluster={cluster} />
       </section>
 
       <Ticker items={QUEST_TICKER} />

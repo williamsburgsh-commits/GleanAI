@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
+import { useTelegram } from '@/components/TelegramProvider';
 import {
   getStoredWallet,
   clearConnection,
@@ -33,6 +34,9 @@ interface QuestItem {
 type VerifyState = Record<string, { busy: boolean; msg: string | null; ok?: boolean }>;
 
 export default function Play() {
+  const { inTelegram } = useTelegram();
+  const homeHref = inTelegram ? '/app' : '/';
+
   const [wallet, setWallet] = useState<string | null>(null);
   const [tg, setTg] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -139,6 +143,13 @@ export default function Play() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-6 sm:px-6">
+      <Link href={homeHref} className="mb-4 inline-flex items-center gap-2 font-pixel text-[9px] text-cyan">
+        <span className="inline-block h-4 w-4">
+          <PixelArrowLeft />
+        </span>
+        BACK
+      </Link>
+
       <header className="mb-6 flex items-center justify-between">
         <span className="font-pixel text-[13px] text-phosphor">
           GLEAN<span className="text-magenta">AI</span>
