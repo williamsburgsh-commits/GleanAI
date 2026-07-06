@@ -116,13 +116,18 @@ export default function MiniApp() {
 
     document.addEventListener('visibilitychange', refresh);
     try {
-      webApp?.onEvent?.('viewportChanged', refresh);
+      webApp?.onEvent('viewportChanged', refresh);
     } catch {
       /* older Telegram clients */
     }
 
     return () => {
       document.removeEventListener('visibilitychange', refresh);
+      try {
+        webApp?.offEvent('viewportChanged', refresh);
+      } catch {
+        /* older Telegram clients */
+      }
     };
   }, [inTelegram, telegramId, loadQuests, loadLeaderboard, webApp]);
 
