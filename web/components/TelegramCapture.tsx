@@ -22,15 +22,15 @@ export function TelegramCapture() {
   if (tg) {
     return (
       <span className="crt-tag" title="Linked Telegram session">
-        <i className="h-1.5 w-1.5 rounded-full bg-phosphor" />
+        <i className="h-1.5 w-1.5 bg-phosphor" style={{ boxShadow: '0 0 4px #27ff7d' }} />
         PLAYER #{tg}
       </span>
     );
   }
 
   return (
-    <span className="crt-tag border-amber/40 bg-amber/10 text-amber">
-      <i className="h-1.5 w-1.5 rounded-full bg-amber" />
+    <span className="crt-tag" style={{ borderColor: '#ffb437', color: '#ffb437' }}>
+      <i className="h-1.5 w-1.5 bg-amber animate-blink" />
       NO SESSION — OPEN FROM BOT
     </span>
   );

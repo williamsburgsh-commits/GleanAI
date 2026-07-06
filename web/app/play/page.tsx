@@ -8,6 +8,13 @@ import {
   getTelegramId,
   clearConnection,
 } from '@/lib/phantom';
+import {
+  PixelArrowLeft,
+  PixelBolt,
+  PixelStar,
+  PixelCheck,
+  PixelWallet,
+} from '@/components/PixelArt';
 
 function shorten(addr: string) {
   return `${addr.slice(0, 4)}…${addr.slice(-4)}`;
@@ -103,12 +110,13 @@ export default function Play() {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-4">
         <CrtPanel label="NO WALLET" tone="amber">
-          <p className="py-4 text-sm text-ash">
+          <p className="py-4 font-term text-[18px] leading-snug text-ash">
             No connected wallet found on this device. Head back and insert your
             wallet to start.
           </p>
           <Link href="/" className="arcade-btn">
-            ◂ Back to start
+            <span className="h-3 w-3 text-phosphor"><PixelArrowLeft /></span>
+            Back to start
           </Link>
         </CrtPanel>
       </main>
@@ -120,13 +128,14 @@ export default function Play() {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-6 sm:px-6">
       <header className="mb-6 flex items-center justify-between">
-        <span className="font-display text-xs text-phosphor glow-text">
+        <span className="font-pixel text-[13px] text-phosphor">
           GLEAN<span className="text-magenta">AI</span>
         </span>
         {wallet ? (
           <button
             onClick={disconnect}
-            className="crt-tag border-magenta/40 bg-magenta/10 text-magenta"
+            className="crt-tag"
+            style={{ borderColor: '#ff3da6', color: '#ff3da6' }}
           >
             {shorten(wallet)} · DISCONNECT
           </button>
@@ -136,40 +145,42 @@ export default function Play() {
       <CrtPanel label="PLAYER STATUS" tone="cyan" className="mb-6">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="font-display text-lg text-phosphor glow-text">
+            <div className="font-pixel text-[14px] text-phosphor glow-text">
               {doneCount}/{quests.length || '—'}
             </div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
               quests
             </div>
           </div>
           <div>
-            <div className="font-display text-lg text-amber glow-text">
+            <div className="flex items-center justify-center gap-1 font-pixel text-[14px] text-amber glow-amber">
+              <span className="h-3 w-3"><PixelStar /></span>
               {points}
             </div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
               points
             </div>
           </div>
           <div>
-            <div className="font-display text-lg text-magenta glow-magenta">
+            <div className="font-pixel text-[14px] text-magenta glow-magenta">
               {tg ? `#${tg}` : '—'}
             </div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
               player id
             </div>
           </div>
         </div>
-        <div className="mt-4 border-t border-grid pt-4 text-center">
+        <div className="mt-4 border-t-2 border-grid pt-4 text-center">
           <Link href="/sprint" className="arcade-btn">
-            <span className="text-magenta">▸</span> Play Solana Sprint
+            <span className="h-3 w-3 text-phosphor"><PixelBolt /></span>
+            Play Solana Sprint
           </Link>
         </div>
       </CrtPanel>
 
       {!tg ? (
         <CrtPanel label="HEADS UP" tone="amber" className="mb-6">
-          <p className="text-xs text-ash">
+          <p className="font-term text-[17px] leading-snug text-ash">
             No player ID on this device. Open GleanAI from the Telegram bot so
             your quests and points sync to your account.
           </p>
@@ -178,50 +189,53 @@ export default function Play() {
 
       <CrtPanel label="QUEST LOG" tone="phosphor">
         {loadError ? (
-          <p className="py-4 text-xs text-magenta">{loadError}</p>
+          <p className="py-4 font-term text-[17px] text-magenta">{loadError}</p>
         ) : null}
 
         {quests.length === 0 && !loadError ? (
-          <p className="py-4 text-xs text-ash">Loading quests…</p>
+          <p className="py-4 font-term text-[17px] text-ash">Loading quests…</p>
         ) : null}
 
-        <ul className="divide-y divide-grid">
-          {quests.map((q) => {
+        <ul>
+          {quests.map((q, idx) => {
             const v = verify[q.slug];
             return (
-              <li key={q.slug} className="py-3">
+              <li key={q.slug} className={`py-3 ${idx > 0 ? 'border-t-2 border-grid' : ''}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`font-display text-[11px] ${
-                        q.completed ? 'text-phosphor' : 'text-ash'
-                      }`}
-                    >
-                      {q.completed ? '[x]' : '[ ]'}
+                    <span className="font-pixel text-[11px]">
+                      {q.completed ? (
+                        <span className="inline-block h-5 w-5 text-phosphor"><PixelCheck /></span>
+                      ) : (
+                        <span className="text-ash">{String(idx + 1).padStart(2, '0')}</span>
+                      )}
                     </span>
                     <div>
-                      <div className="text-sm text-bone">{q.title}</div>
-                      <div className="text-[11px] text-ash">{q.description}</div>
+                      <div className={`font-term text-[18px] ${q.completed ? 'text-phosphor' : 'text-bone'}`}>
+                        {q.title}
+                      </div>
+                      <div className="font-term text-[15px] text-ash">{q.description}</div>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="text-[11px] uppercase tracking-wider text-amber">
+                    <span className="flex items-center gap-1 font-term text-[16px] uppercase tracking-[0.1em] text-amber">
+                      <span className="h-2.5 w-2.5"><PixelStar /></span>
                       +{q.points}
                     </span>
                     {q.completed ? (
-                      <span className="text-[10px] uppercase tracking-wider text-phosphor">
+                      <span className="font-term text-[14px] uppercase tracking-[0.1em] text-phosphor">
                         cleared
                       </span>
                     ) : q.autoVerifiable ? (
                       <button
                         onClick={() => onVerify(q.slug)}
                         disabled={v?.busy}
-                        className="rounded-sm border border-phosphor/50 bg-phosphor/10 px-2 py-1 text-[10px] uppercase tracking-wider text-phosphor transition-colors hover:bg-phosphor/20 disabled:cursor-not-allowed disabled:border-ash disabled:text-ash"
+                        className="chip-btn"
                       >
                         {v?.busy ? 'checking…' : 'verify'}
                       </button>
                     ) : (
-                      <span className="text-[10px] uppercase tracking-wider text-ash">
+                      <span className="font-term text-[14px] uppercase tracking-[0.1em] text-ash">
                         off-chain
                       </span>
                     )}
@@ -229,7 +243,7 @@ export default function Play() {
                 </div>
                 {v?.msg ? (
                   <p
-                    className={`mt-2 pl-7 text-[11px] ${
+                    className={`mt-2 pl-8 font-term text-[16px] ${
                       v.ok ? 'text-phosphor' : 'text-magenta'
                     }`}
                   >

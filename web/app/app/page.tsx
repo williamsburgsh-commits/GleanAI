@@ -5,6 +5,17 @@ import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
 import { useTelegram } from '@/components/TelegramProvider';
 import { getStoredWallet } from '@/lib/phantom';
+import { getLevelProgress } from '@/lib/levels';
+import {
+  PixelGhost,
+  PixelStar,
+  PixelTrophy,
+  PixelCheck,
+  PixelBolt,
+  PixelLock,
+  PixelArrowRight,
+  PixelWallet,
+} from '@/components/PixelArt';
 
 interface QuestItem {
   slug: string;
@@ -143,7 +154,7 @@ export default function MiniApp() {
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
-        <p className="text-center font-display text-[11px] text-phosphor glow-text">
+        <p className="text-center font-pixel text-[11px] text-phosphor glow-text">
           BOOTING GLEANAI<span className="animate-blink"> _</span>
         </p>
       </main>
@@ -153,20 +164,21 @@ export default function MiniApp() {
   const doneCount = quests.filter((q) => q.completed).length;
   const pct = quests.length ? Math.round((doneCount / quests.length) * 100) : 0;
   const displayName = player?.firstName || (player?.username ? `@${player.username}` : null);
+  const lvl = getLevelProgress(points);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-3 py-4">
       {/* Header */}
       <header className="flex items-center justify-between">
-        <span className="font-display text-xs text-phosphor glow-text">
+        <span className="font-pixel text-[13px] text-phosphor">
           GLEAN<span className="text-magenta">AI</span>
         </span>
         {wallet ? (
-          <span className="crt-tag border-cyan/40 bg-cyan/10 text-cyan">
+          <span className="crt-tag" style={{ borderColor: '#2bd9ff', color: '#2bd9ff' }}>
             {shorten(wallet)}
           </span>
         ) : (
-          <span className="crt-tag border-amber/40 bg-amber/10 text-amber">
+          <span className="crt-tag" style={{ borderColor: '#ffb437', color: '#ffb437' }}>
             {inTelegram ? 'IN-APP' : 'BROWSER'}
           </span>
         )}
@@ -174,63 +186,101 @@ export default function MiniApp() {
 
       {error ? (
         <CrtPanel label="SESSION" tone="magenta">
-          <p className="text-xs text-magenta">{error}</p>
+          <p className="font-term text-[17px] text-magenta">{error}</p>
         </CrtPanel>
       ) : null}
 
       {/* Player status */}
       <CrtPanel label="PLAYER" tone="cyan">
-        {displayName ? (
-          <p className="mb-3 text-sm text-bone">
-            Welcome, <span className="text-cyan">{displayName}</span>
-          </p>
-        ) : null}
+        <div className="mb-3 flex items-center gap-3">
+          <div className="h-9 w-9 shrink-0 text-cyan">
+            <PixelGhost />
+          </div>
+          {displayName ? (
+            <p className="font-term text-[18px] text-bone">
+              Welcome, <span className="text-cyan">{displayName}</span>
+            </p>
+          ) : null}
+        </div>
+
+        {/* Level banner */}
+        <div className="mb-4 rounded-sm border border-grid bg-slate/40 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="h-5 w-5 text-amber glow-amber">
+                <PixelTrophy />
+              </span>
+              <span className="font-pixel text-[12px] text-amber glow-amber">
+                LV {lvl.level}
+              </span>
+              <span className="font-term text-[16px] uppercase tracking-[0.15em] text-bone">
+                {lvl.title}
+              </span>
+            </div>
+            <span className="font-term text-[13px] uppercase tracking-[0.15em] text-ash">
+              {lvl.isMax
+                ? 'MAX'
+                : `${lvl.pointsToNext} xp → lv ${lvl.level + 1}`}
+            </span>
+          </div>
+          <div className="crt-progress mt-2">
+            <i style={{ width: `${lvl.progressPct}%` }} />
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
-            <div className="font-display text-lg text-amber glow-text">{points}</div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">points</div>
+            <div className="flex items-center justify-center gap-1 font-pixel text-[14px] text-amber glow-amber">
+              <span className="h-3 w-3"><PixelStar /></span>
+              {points}
+            </div>
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">points</div>
           </div>
           <div>
-            <div className="font-display text-lg text-phosphor glow-text">
+            <div className="font-pixel text-[14px] text-phosphor glow-text">
               {doneCount}/{quests.length || '—'}
             </div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">quests</div>
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">quests</div>
           </div>
           <div>
-            <div className="font-display text-lg text-magenta glow-magenta">
+            <div className="font-pixel text-[14px] text-magenta glow-magenta">
               {myRank ? `#${myRank}` : '—'}
             </div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">rank</div>
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">rank</div>
           </div>
         </div>
         {/* Progress bar */}
         <div className="mt-4">
-          <div className="mb-1 flex justify-between text-[9px] uppercase tracking-[0.3em] text-ash">
+          <div className="mb-1 flex justify-between font-term text-[14px] uppercase tracking-[0.2em] text-ash">
             <span>onboarding</span>
             <span>{pct}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full border border-grid bg-slate/60">
-            <div
-              className="h-full bg-phosphor transition-all duration-500"
-              style={{ width: `${pct}%` }}
-            />
+          <div className="crt-progress">
+            <i style={{ width: `${pct}%` }} />
           </div>
         </div>
       </CrtPanel>
 
       {/* Sprint hero CTA */}
       <Link href="/sprint" className="block">
-        <div className="crt-panel scanlines border-magenta/40 p-4 transition-transform active:scale-[0.98]">
+        <div className="crt-panel scanlines p-4 transition-transform active:scale-[0.98]" style={{ borderColor: '#ff3da655' }}>
           <div className="flex items-center justify-between">
-            <div>
-              <div className="font-display text-[11px] text-magenta glow-magenta">
-                SOLANA SPRINT
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 text-magenta">
+                <PixelBolt />
               </div>
-              <div className="mt-1 text-[11px] text-ash">
-                Speedrun the 5 actions · +100 pts
+              <div>
+                <div className="font-pixel text-[11px] text-magenta glow-magenta">
+                  SOLANA SPRINT
+                </div>
+                <div className="mt-1 font-term text-[15px] text-ash">
+                  Speedrun the 5 actions · +100 pts
+                </div>
               </div>
             </div>
-            <span className="font-display text-xl text-magenta glow-magenta">▸</span>
+            <span className="h-5 w-5 text-magenta glow-magenta">
+              <PixelArrowRight />
+            </span>
           </div>
         </div>
       </Link>
@@ -238,67 +288,80 @@ export default function MiniApp() {
       {/* Wallet nudge for on-chain quests */}
       {!walletLinked ? (
         <CrtPanel label="WALLET" tone="amber">
-          <p className="mb-3 text-[11px] text-ash">
-            Connect a Phantom wallet to unlock on-chain quests. This opens in your
-            browser (wallets can&apos;t run inside Telegram).
-          </p>
+          <div className="mb-3 flex items-start gap-3">
+            <div className="mt-0.5 h-7 w-7 shrink-0 text-amber">
+              <PixelLock />
+            </div>
+            <p className="font-term text-[16px] leading-snug text-ash">
+              Connect a Phantom wallet to unlock on-chain quests. This opens in your
+              browser (wallets can&apos;t run inside Telegram).
+            </p>
+          </div>
           <button onClick={openWalletConnect} className="arcade-btn w-full">
-            <span className="text-magenta">▸</span> Connect Wallet
+            <span className="h-3 w-3 text-phosphor"><PixelWallet /></span>
+            Connect Wallet
           </button>
         </CrtPanel>
       ) : null}
 
-      {/* Quest log */}
+      {/* Quest log — arcade stage select */}
       <CrtPanel label="QUEST LOG" tone="phosphor">
-        {loadError ? <p className="py-3 text-xs text-magenta">{loadError}</p> : null}
+        {loadError ? <p className="py-3 font-term text-[17px] text-magenta">{loadError}</p> : null}
         {quests.length === 0 && !loadError ? (
-          <p className="py-3 text-xs text-ash">Loading quests…</p>
+          <p className="py-3 font-term text-[17px] text-ash">Loading quests…</p>
         ) : null}
-        <ul className="divide-y divide-grid">
-          {quests.map((q) => {
+        <ul>
+          {quests.map((q, idx) => {
             const v = verify[q.slug];
             const needsWallet = q.autoVerifiable && !walletLinked;
+            const locked = !q.completed && needsWallet;
             return (
-              <li key={q.slug} className="py-3">
+              <li
+                key={q.slug}
+                className={`py-3 ${idx > 0 ? 'border-t-2 border-grid' : ''}`}
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`font-display text-[11px] ${
-                        q.completed ? 'text-phosphor' : 'text-ash'
-                      }`}
-                    >
-                      {q.completed ? '[x]' : '[ ]'}
+                    {/* stage marker: check if cleared, lock if locked, else stage number */}
+                    <span className="font-pixel text-[11px]">
+                      {q.completed ? (
+                        <span className="inline-block h-5 w-5 text-phosphor"><PixelCheck /></span>
+                      ) : locked ? (
+                        <span className="inline-block h-5 w-5 text-ash"><PixelLock /></span>
+                      ) : (
+                        <span className="text-ash">{String(idx + 1).padStart(2, '0')}</span>
+                      )}
                     </span>
                     <div>
-                      <div className="text-sm text-bone">{q.title}</div>
-                      <div className="text-[11px] text-ash">{q.description}</div>
+                      <div className={`font-term text-[18px] ${q.completed ? 'text-phosphor' : 'text-bone'}`}>
+                        {q.title}
+                      </div>
+                      <div className="font-term text-[15px] text-ash">{q.description}</div>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="text-[11px] uppercase tracking-wider text-amber">
+                    <span className="flex items-center gap-1 font-term text-[16px] uppercase tracking-[0.1em] text-amber">
+                      <span className="h-2.5 w-2.5"><PixelStar /></span>
                       +{q.points}
                     </span>
                     {q.completed ? (
-                      <span className="text-[10px] uppercase tracking-wider text-phosphor">
+                      <span className="font-term text-[14px] uppercase tracking-[0.1em] text-phosphor">
                         cleared
                       </span>
                     ) : needsWallet ? (
-                      <button
-                        onClick={openWalletConnect}
-                        className="rounded-sm border border-amber/50 bg-amber/10 px-2 py-1 text-[10px] uppercase tracking-wider text-amber"
-                      >
+                      <button onClick={openWalletConnect} className="chip-btn-amber">
                         wallet
                       </button>
                     ) : q.autoVerifiable ? (
                       <button
                         onClick={() => onVerify(q.slug)}
                         disabled={v?.busy}
-                        className="rounded-sm border border-phosphor/50 bg-phosphor/10 px-2 py-1 text-[10px] uppercase tracking-wider text-phosphor transition-colors hover:bg-phosphor/20 disabled:cursor-not-allowed disabled:border-ash disabled:text-ash"
+                        className="chip-btn"
                       >
                         {v?.busy ? 'checking…' : 'verify'}
                       </button>
                     ) : (
-                      <span className="text-[10px] uppercase tracking-wider text-ash">
+                      <span className="font-term text-[14px] uppercase tracking-[0.1em] text-ash">
                         off-chain
                       </span>
                     )}
@@ -306,7 +369,7 @@ export default function MiniApp() {
                 </div>
                 {v?.msg ? (
                   <p
-                    className={`mt-2 pl-7 text-[11px] ${
+                    className={`mt-2 pl-8 font-term text-[16px] ${
                       v.ok ? 'text-phosphor' : 'text-magenta'
                     }`}
                   >
@@ -321,27 +384,33 @@ export default function MiniApp() {
 
       {/* Leaderboard */}
       <CrtPanel label="LEADERBOARD" tone="amber">
+        <div className="mb-2 flex items-center gap-2 text-amber">
+          <span className="h-4 w-4"><PixelTrophy /></span>
+        </div>
         {top.length === 0 ? (
-          <p className="py-3 text-[11px] text-ash">No players yet. Be the first.</p>
+          <p className="py-3 font-term text-[16px] text-ash">No players yet. Be the first.</p>
         ) : (
-          <ul className="divide-y divide-grid">
-            {top.map((row) => {
+          <ul>
+            {top.map((row, idx) => {
               const isMe = row.telegramId === telegramId;
               return (
                 <li
                   key={row.telegramId}
-                  className={`flex items-center justify-between py-2 text-[12px] ${
-                    isMe ? 'text-phosphor' : 'text-bone'
-                  }`}
+                  className={`flex items-center justify-between py-2 font-term text-[18px] ${
+                    idx > 0 ? 'border-t-2 border-grid' : ''
+                  } ${isMe ? 'text-phosphor' : 'text-bone'}`}
                 >
                   <span className="flex items-center gap-2">
-                    <span className="font-display text-[10px] text-ash">
+                    <span className="font-pixel text-[10px] text-ash">
                       {row.rank.toString().padStart(2, '0')}
                     </span>
                     {row.username ? `@${row.username}` : `#${row.telegramId}`}
-                    {isMe ? <span className="text-[9px] text-phosphor">YOU</span> : null}
+                    {isMe ? <span className="font-term text-[14px] text-phosphor">YOU</span> : null}
                   </span>
-                  <span className="text-amber">{row.points}</span>
+                  <span className="flex items-center gap-1 text-amber">
+                    <span className="h-2.5 w-2.5"><PixelStar /></span>
+                    {row.points}
+                  </span>
                 </li>
               );
             })}
@@ -349,7 +418,7 @@ export default function MiniApp() {
         )}
       </CrtPanel>
 
-      <p className="pb-2 text-center text-[9px] uppercase tracking-[0.3em] text-ash">
+      <p className="pb-2 text-center font-term text-[14px] uppercase tracking-[0.2em] text-ash">
         gleanai · speedrun your solana onboarding
       </p>
     </main>

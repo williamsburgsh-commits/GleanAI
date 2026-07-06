@@ -65,6 +65,7 @@ flowchart TD
 - [x] **5. Solana Sprint mini-game** (timed speedrun + shareable result card)
 - [x] **6. Admin dashboard** (password-gated `/admin` for manual reward payouts)
 - [x] **7. Telegram Mini App** (`/app` in-Telegram experience, secure `initData` auth, launch button)
+- [x] **8. Leveling system** (points-based levels + titles, shown in Mini App and `/points`)
 
 ## Getting started
 

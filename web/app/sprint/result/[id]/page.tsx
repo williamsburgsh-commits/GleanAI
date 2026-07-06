@@ -6,6 +6,7 @@ import { ShareButton } from '@/components/ShareButton';
 import { getServiceClient } from '@/lib/supabaseServer';
 import { getSprintRun, getSprintRank } from '@/lib/sprint.server';
 import { formatDuration, onboardedPhrase } from '@/lib/format';
+import { PixelStar, PixelTrophy } from '@/components/PixelArt';
 
 export const runtime = 'nodejs';
 
@@ -67,34 +68,38 @@ export default async function SprintResult({
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-4 py-10">
       <CrtPanel label="SOLANA SPRINT // RESULT" tone="phosphor">
         <div className="space-y-6 py-4 text-center">
-          <div className="text-[10px] uppercase tracking-[0.4em] text-ash">
+          <div className="mx-auto h-12 w-12 text-amber glow-amber">
+            <PixelTrophy />
+          </div>
+          <div className="font-term text-[16px] uppercase tracking-[0.3em] text-ash">
             onboarded in
           </div>
-          <div className="font-display text-5xl text-phosphor glow-text sm:text-6xl">
+          <div className="font-pixel text-4xl text-phosphor glow-text sm:text-6xl">
             {formatDuration(run.duration_ms)}
           </div>
 
           <div className="mx-auto flex max-w-xs items-center justify-center gap-6">
             <div>
-              <div className="font-display text-base text-amber glow-text">
+              <div className="flex items-center justify-center gap-1 font-pixel text-[13px] text-amber glow-amber">
+                <span className="h-3 w-3"><PixelStar /></span>
                 {run.actions_completed}/5
               </div>
-              <div className="text-[9px] uppercase tracking-[0.3em] text-ash">
+              <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
                 actions
               </div>
             </div>
             <div className="h-8 w-px bg-grid" />
             <div>
-              <div className="font-display text-base text-magenta glow-magenta">
+              <div className="font-pixel text-[13px] text-magenta glow-magenta">
                 {rank ? `#${rank}` : '--'}
               </div>
-              <div className="text-[9px] uppercase tracking-[0.3em] text-ash">
+              <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
                 {total ? `of ${total}` : 'rank'}
               </div>
             </div>
           </div>
 
-          <p className="text-sm text-bone">{onboardedPhrase(run.duration_ms)}</p>
+          <p className="font-term text-[18px] text-bone">{onboardedPhrase(run.duration_ms)}</p>
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <ShareButton
@@ -103,7 +108,7 @@ export default async function SprintResult({
             />
             <Link
               href="/sprint"
-              className="text-[11px] uppercase tracking-[0.25em] text-cyan underline"
+              className="font-term text-[16px] uppercase tracking-[0.1em] text-cyan underline"
             >
               run your own
             </Link>
@@ -111,7 +116,7 @@ export default async function SprintResult({
         </div>
       </CrtPanel>
 
-      <p className="mt-6 text-center text-[10px] uppercase tracking-[0.3em] text-ash">
+      <p className="mt-6 text-center font-term text-[14px] uppercase tracking-[0.2em] text-ash">
         gleanai · speedrun solana
       </p>
     </main>

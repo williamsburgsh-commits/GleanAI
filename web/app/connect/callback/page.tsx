@@ -62,7 +62,7 @@ export default function ConnectCallback() {
       >
         <div className="space-y-4 py-4">
           <p
-            className={`font-display text-[11px] leading-relaxed ${
+            className={`font-pixel text-[11px] leading-relaxed ${
               status === 'error' ? 'text-magenta glow-magenta' : 'text-phosphor glow-text'
             }`}
           >
@@ -73,14 +73,14 @@ export default function ConnectCallback() {
           </p>
 
           {wallet ? (
-            <p className="break-all rounded-sm border border-grid bg-slate/60 p-3 text-[11px] text-ash">
+            <p className="break-all bg-screen p-3 font-term text-[16px] text-ash" style={{ border: '2px solid #1b2130' }}>
               <span className="text-cyan">WALLET:</span> {wallet}
             </p>
           ) : null}
 
           {error ? (
             <div className="space-y-3">
-              <p className="text-xs text-magenta">{error}</p>
+              <p className="font-term text-[17px] text-magenta">{error}</p>
               <button
                 className="arcade-btn"
                 onClick={() => router.replace('/')}

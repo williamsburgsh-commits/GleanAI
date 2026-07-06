@@ -34,11 +34,11 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Press+Start+2P&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen antialiased">
+      <body className="crt-roll min-h-screen">
         <TelegramProvider>{children}</TelegramProvider>
       </body>
     </html>

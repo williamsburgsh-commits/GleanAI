@@ -155,7 +155,7 @@ export default function AdminPage() {
       <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
         <CrtPanel label="ADMIN // ACCESS" tone="magenta">
           <form onSubmit={login} className="space-y-4 py-2">
-            <p className="text-xs text-ash">
+            <p className="font-term text-[17px] text-ash">
               Restricted. Enter the admin password to continue.
             </p>
             <input
@@ -163,10 +163,10 @@ export default function AdminPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="password"
-              className="w-full rounded-sm border border-grid bg-slate/60 px-3 py-2 text-sm text-bone outline-none focus:border-phosphor"
+              className="crt-input"
             />
             {loginError ? (
-              <p className="text-xs text-magenta">{loginError}</p>
+              <p className="font-term text-[17px] text-magenta">{loginError}</p>
             ) : null}
             <button type="submit" className="arcade-btn w-full">
               Enter
@@ -180,7 +180,7 @@ export default function AdminPage() {
   if (authed === null) {
     return (
       <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
-        <p className="text-center font-display text-[11px] text-phosphor glow-text">
+        <p className="text-center font-pixel text-[11px] text-phosphor glow-text">
           LOADING<span className="animate-blink"> _</span>
         </p>
       </main>
@@ -191,12 +191,13 @@ export default function AdminPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-6 sm:px-6">
       <header className="mb-6 flex items-center justify-between">
-        <span className="font-display text-xs text-phosphor glow-text">
+        <span className="font-pixel text-[13px] text-phosphor">
           GLEAN<span className="text-magenta">AI</span> · ADMIN
         </span>
         <button
           onClick={logout}
-          className="crt-tag border-magenta/40 bg-magenta/10 text-magenta"
+          className="crt-tag"
+          style={{ borderColor: '#ff3da6', color: '#ff3da6' }}
         >
           logout
         </button>
@@ -206,30 +207,30 @@ export default function AdminPage() {
       <div className="mb-6 grid grid-cols-3 gap-3">
         <CrtPanel label="PENDING" tone="amber">
           <div className="text-center">
-            <div className="font-display text-xl text-amber glow-text">
+            <div className="font-pixel text-[15px] text-amber glow-amber">
               {summary?.pendingCount ?? 0}
             </div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
               to pay
             </div>
           </div>
         </CrtPanel>
         <CrtPanel label="OWED" tone="magenta">
           <div className="text-center">
-            <div className="font-display text-xl text-magenta glow-magenta">
+            <div className="font-pixel text-[15px] text-magenta glow-magenta">
               {(summary?.pendingSol ?? 0).toFixed(3)}
             </div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
               SOL pending
             </div>
           </div>
         </CrtPanel>
         <CrtPanel label="PAID" tone="phosphor">
           <div className="text-center">
-            <div className="font-display text-xl text-phosphor glow-text">
+            <div className="font-pixel text-[15px] text-phosphor glow-text">
               {(summary?.paidSol ?? 0).toFixed(3)}
             </div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-ash">
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">
               SOL paid
             </div>
           </div>
@@ -240,12 +241,12 @@ export default function AdminPage() {
       <CrtPanel label="NEW REWARD" tone="cyan" className="mb-6">
         <form onSubmit={createReward} className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-[10px] uppercase tracking-[0.3em] text-ash">
+            <label className="mb-2 block font-term text-[14px] uppercase tracking-[0.2em] text-ash">
               recipient
             </label>
             <RecipientPicker onPick={setRecipient} selectedId={recipient?.id} />
             {recipient ? (
-              <p className="mt-2 text-[11px] text-phosphor">
+              <p className="mt-2 font-term text-[16px] text-phosphor">
                 Selected:{' '}
                 {recipient.telegram_username
                   ? `@${recipient.telegram_username}`
@@ -255,7 +256,7 @@ export default function AdminPage() {
           </div>
           <div className="space-y-3">
             <div>
-              <label className="mb-2 block text-[10px] uppercase tracking-[0.3em] text-ash">
+              <label className="mb-2 block font-term text-[14px] uppercase tracking-[0.2em] text-ash">
                 amount (SOL)
               </label>
               <input
@@ -265,18 +266,18 @@ export default function AdminPage() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.5"
-                className="w-full rounded-sm border border-grid bg-slate/60 px-3 py-2 text-sm text-bone outline-none focus:border-phosphor"
+                className="crt-input"
               />
             </div>
             <div>
-              <label className="mb-2 block text-[10px] uppercase tracking-[0.3em] text-ash">
+              <label className="mb-2 block font-term text-[14px] uppercase tracking-[0.2em] text-ash">
                 reason
               </label>
               <input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Top 10 leaderboard - week 1"
-                className="w-full rounded-sm border border-grid bg-slate/60 px-3 py-2 text-sm text-bone outline-none focus:border-phosphor"
+                className="crt-input"
               />
             </div>
             <button type="submit" className="arcade-btn w-full">
@@ -284,7 +285,7 @@ export default function AdminPage() {
             </button>
             {createMsg ? (
               <p
-                className={`text-[11px] ${
+                className={`font-term text-[16px] ${
                   createMsg === 'Reward created.' ? 'text-phosphor' : 'text-magenta'
                 }`}
               >
@@ -296,16 +297,17 @@ export default function AdminPage() {
       </CrtPanel>
 
       {/* Filters */}
-      <div className="mb-3 flex gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         {(['all', 'pending', 'paid', 'cancelled'] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-sm border px-3 py-1 text-[10px] uppercase tracking-wider transition-colors ${
+            className="px-3 py-1 font-term text-[15px] uppercase tracking-[0.1em] transition-colors"
+            style={
               filter === f
-                ? 'border-phosphor bg-phosphor/15 text-phosphor'
-                : 'border-grid text-ash hover:text-bone'
-            }`}
+                ? { border: '1px solid #27ff7d', background: '#08160d', color: '#27ff7d' }
+                : { border: '1px solid #1b2130', color: '#7d8694' }
+            }
           >
             {f}
           </button>
@@ -314,39 +316,40 @@ export default function AdminPage() {
 
       {/* Rewards table */}
       <CrtPanel label="REWARDS" tone="phosphor">
-        {error ? <p className="mb-3 text-xs text-magenta">{error}</p> : null}
+        {error ? <p className="mb-3 font-term text-[17px] text-magenta">{error}</p> : null}
         {rewards.length === 0 ? (
-          <p className="py-4 text-xs text-ash">No rewards in this view.</p>
+          <p className="py-4 font-term text-[17px] text-ash">No rewards in this view.</p>
         ) : (
-          <ul className="divide-y divide-grid">
-            {rewards.map((r) => (
-              <li key={r.id} className="py-3">
+          <ul>
+            {rewards.map((r, idx) => (
+              <li key={r.id} className={`py-3 ${idx > 0 ? 'border-t-2 border-grid' : ''}`}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm text-bone">
+                    <div className="font-term text-[18px] text-bone">
                       {r.user?.telegram_username
                         ? `@${r.user.telegram_username}`
                         : r.user
                         ? `#${r.user.telegram_id}`
                         : 'unknown user'}
-                      <span className="ml-2 text-[11px] text-ash">
+                      <span className="ml-2 font-term text-[15px] text-ash">
                         {shorten(r.user?.wallet_address ?? null)}
                       </span>
                     </div>
-                    <div className="text-[11px] text-ash">{r.reason}</div>
+                    <div className="font-term text-[15px] text-ash">{r.reason}</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-display text-sm text-amber">
+                    <span className="flex items-center gap-1 font-pixel text-[12px] text-amber">
                       {Number(r.amount_sol).toFixed(3)} SOL
                     </span>
                     <span
-                      className={`rounded-sm border px-2 py-0.5 text-[10px] uppercase tracking-wider ${
+                      className="px-2 py-0.5 font-term text-[14px] uppercase tracking-[0.1em]"
+                      style={
                         r.status === 'pending'
-                          ? 'border-amber/50 text-amber'
+                          ? { border: '1px solid #ffb437', color: '#ffb437', background: '#181206' }
                           : r.status === 'paid'
-                          ? 'border-phosphor/50 text-phosphor'
-                          : 'border-ash/40 text-ash'
-                      }`}
+                          ? { border: '1px solid #27ff7d', color: '#27ff7d', background: '#08160d' }
+                          : { border: '1px solid #2a3140', color: '#7d8694' }
+                      }
                     >
                       {r.status}
                     </span>
@@ -361,11 +364,11 @@ export default function AdminPage() {
                         value={txSig}
                         onChange={(e) => setTxSig(e.target.value)}
                         placeholder="payout tx signature"
-                        className="min-w-0 flex-1 rounded-sm border border-grid bg-slate/60 px-2 py-1 text-[11px] text-bone outline-none focus:border-phosphor"
+                        className="crt-input min-w-0 flex-1 text-[15px]"
                       />
                       <button
                         onClick={() => setStatus(r.id, 'paid', txSig)}
-                        className="rounded-sm border border-phosphor/50 bg-phosphor/10 px-2 py-1 text-[10px] uppercase tracking-wider text-phosphor hover:bg-phosphor/20"
+                        className="chip-btn"
                       >
                         confirm
                       </button>
@@ -374,7 +377,7 @@ export default function AdminPage() {
                           setPayingId(null);
                           setTxSig('');
                         }}
-                        className="text-[10px] uppercase tracking-wider text-ash"
+                        className="font-term text-[14px] uppercase tracking-[0.1em] text-ash"
                       >
                         cancel
                       </button>
@@ -386,13 +389,13 @@ export default function AdminPage() {
                           setPayingId(r.id);
                           setTxSig('');
                         }}
-                        className="rounded-sm border border-phosphor/50 bg-phosphor/10 px-2 py-1 text-[10px] uppercase tracking-wider text-phosphor hover:bg-phosphor/20"
+                        className="chip-btn"
                       >
                         mark paid
                       </button>
                       <button
                         onClick={() => setStatus(r.id, 'cancelled')}
-                        className="rounded-sm border border-magenta/40 px-2 py-1 text-[10px] uppercase tracking-wider text-magenta hover:bg-magenta/10"
+                        className="chip-btn-magenta"
                       >
                         cancel
                       </button>
@@ -405,7 +408,7 @@ export default function AdminPage() {
                     href={explorerTx(r.payout_tx_signature)}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-2 inline-block text-[11px] text-cyan underline"
+                    className="mt-2 inline-block font-term text-[16px] text-cyan underline"
                   >
                     view payout tx ↗
                   </a>

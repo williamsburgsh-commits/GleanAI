@@ -7,6 +7,25 @@ import { useTelegram } from '@/components/TelegramProvider';
 import { getTelegramId } from '@/lib/phantom';
 import { SPRINT_ACTIONS, TOTAL_ACTIONS } from '@/lib/sprintActions';
 import { formatDuration } from '@/lib/format';
+import {
+  PixelArrowLeft,
+  PixelBolt,
+  PixelWallet,
+  PixelCoin,
+  PixelSwap,
+  PixelStake,
+  PixelNft,
+  PixelCheck,
+} from '@/components/PixelArt';
+
+// Decorative sprite per sprint action key (presentation only).
+const SPRITE_BY_KEY: Record<string, typeof PixelWallet> = {
+  wallet: PixelWallet,
+  sol: PixelCoin,
+  swap: PixelSwap,
+  stake: PixelStake,
+  nft: PixelNft,
+};
 
 type Phase = 'idle' | 'running' | 'submitting' | 'done';
 
@@ -133,30 +152,28 @@ export default function SprintPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col px-4 py-6 sm:px-6">
       <header className="mb-6 flex items-center justify-between gap-3">
-        <Link
-          href={homeHref}
-          className="crt-tag border-phosphor/40 bg-phosphor/10 text-phosphor transition-colors hover:bg-phosphor/20"
-        >
-          ◂ Menu
+        <Link href={homeHref} className="crt-tag" style={{ borderColor: '#27ff7d', color: '#27ff7d' }}>
+          <span className="h-3 w-3"><PixelArrowLeft /></span>
+          Menu
         </Link>
-        <span className="font-display text-xs text-phosphor glow-text">
+        <span className="font-pixel text-[13px] text-phosphor">
           GLEAN<span className="text-magenta">AI</span>
         </span>
-        <span className="crt-tag border-magenta/40 bg-magenta/10 text-magenta">
+        <span className="crt-tag" style={{ borderColor: '#ff3da6', color: '#ff3da6' }}>
           SPRINT
         </span>
       </header>
 
-      {/* Timer */}
+      {/* Timer — the only "live" readout, so it gets the phosphor glow */}
       <div className="mb-6 text-center">
         <div
-          className={`font-display text-4xl sm:text-5xl ${
-            phase === 'running' ? 'text-amber glow-text' : 'text-phosphor glow-text'
+          className={`font-pixel text-3xl sm:text-5xl ${
+            phase === 'running' ? 'text-amber glow-amber' : 'text-phosphor glow-text'
           }`}
         >
           {formatDuration(phase === 'done' && finalMs ? finalMs : elapsed)}
         </div>
-        <div className="mt-2 text-[10px] uppercase tracking-[0.3em] text-ash">
+        <div className="mt-2 font-term text-[15px] uppercase tracking-[0.2em] text-ash">
           {phase === 'running'
             ? `action ${step + 1} / ${TOTAL_ACTIONS}`
             : 'speedrun timer'}
@@ -165,29 +182,31 @@ export default function SprintPage() {
 
       {phase === 'idle' ? (
         <CrtPanel label="MISSION BRIEFING" tone="magenta">
-          <p className="mb-4 text-sm text-ash">
+          <p className="mb-4 font-term text-[18px] leading-snug text-ash">
             Onboard to Solana as fast as you can. Five actions will flash on
             screen - tap the matching tile for each, in order. The clock is
             running. Beat your best.
           </p>
-          <ol className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
-            {SPRINT_ACTIONS.map((a, i) => (
-              <li
-                key={a.key}
-                className="rounded-sm border border-grid bg-slate/60 p-2 text-center"
-              >
-                <div className="font-display text-[10px] text-magenta">
-                  0{i + 1}
-                </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wider text-bone">
-                  {a.label}
-                </div>
-              </li>
-            ))}
+          <ol className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {SPRINT_ACTIONS.map((a, i) => {
+              const Sprite = SPRITE_BY_KEY[a.key] ?? PixelBolt;
+              return (
+                <li key={a.key} className="stage-tile">
+                  <div className="mx-auto mb-2 h-7 w-7 text-phosphor">
+                    <Sprite />
+                  </div>
+                  <div className="font-pixel text-[10px] text-magenta">0{i + 1}</div>
+                  <div className="mt-2 font-term text-[14px] uppercase tracking-[0.1em] text-bone">
+                    {a.label}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
           <div className="text-center">
             <button className="arcade-btn" onClick={start}>
-              <span className="text-magenta">▸</span> Start Sprint
+              <span className="h-3 w-3 text-phosphor"><PixelBolt /></span>
+              Start Sprint
               <span className="animate-blink">_</span>
             </button>
           </div>
@@ -197,29 +216,47 @@ export default function SprintPage() {
       {phase === 'running' ? (
         <CrtPanel label="TAP THE MATCHING ACTION" tone="phosphor">
           <div className="mb-5 text-center">
-            <div className="text-[10px] uppercase tracking-[0.3em] text-ash">
+            <div className="font-term text-[15px] uppercase tracking-[0.2em] text-ash">
               now
             </div>
-            <div className="font-display text-xl text-phosphor glow-text">
-              {SPRINT_ACTIONS[step].label}
+            <div className="mt-1 flex items-center justify-center gap-3">
+              {(() => {
+                const Sprite = SPRITE_BY_KEY[SPRINT_ACTIONS[step].key] ?? PixelBolt;
+                return (
+                  <span className="h-8 w-8 text-phosphor glow-text">
+                    <Sprite />
+                  </span>
+                );
+              })()}
+              <span className="font-pixel text-base text-phosphor glow-text sm:text-xl">
+                {SPRINT_ACTIONS[step].label}
+              </span>
             </div>
-            <div className="mt-1 text-[11px] text-ash">
+            <div className="mt-2 font-term text-[16px] text-ash">
               {SPRINT_ACTIONS[step].hint}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {tiles.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => onTile(t.key)}
-                className="rounded-sm border-2 border-grid bg-slate/60 px-3 py-4 text-xs font-bold uppercase tracking-wider text-bone transition-all hover:border-phosphor hover:bg-phosphor/10 hover:text-phosphor active:translate-y-0.5"
-              >
-                {t.label}
-              </button>
-            ))}
+            {tiles.map((t) => {
+              const Sprite = SPRITE_BY_KEY[t.key] ?? PixelBolt;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => onTile(t.key)}
+                  className="stage-tile hover-glitch flex flex-col items-center gap-2 px-3 py-4"
+                >
+                  <span className="h-8 w-8 text-bone">
+                    <Sprite />
+                  </span>
+                  <span className="font-pixel text-[11px] uppercase tracking-[0.1em] text-bone">
+                    {t.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           {misses > 0 ? (
-            <p className="mt-4 text-center text-[11px] text-magenta">
+            <p className="mt-4 text-center font-term text-[16px] text-magenta glow-magenta">
               misses: {misses}
             </p>
           ) : null}
@@ -228,7 +265,7 @@ export default function SprintPage() {
 
       {phase === 'submitting' ? (
         <CrtPanel label="SAVING RUN" tone="cyan">
-          <p className="py-4 text-center font-display text-[11px] text-cyan glow-text">
+          <p className="py-4 text-center font-pixel text-[11px] text-cyan glow-cyan">
             UPLOADING TIME<span className="animate-blink"> _</span>
           </p>
         </CrtPanel>
@@ -240,46 +277,50 @@ export default function SprintPage() {
           tone={error ? 'amber' : 'phosphor'}
         >
           <div className="space-y-4 py-2 text-center">
+            <div className="mx-auto mb-2 h-10 w-10 text-phosphor glow-text">
+              <PixelCheck />
+            </div>
             <div>
-              <div className="font-display text-3xl text-phosphor glow-text">
+              <div className="font-pixel text-3xl text-phosphor glow-text">
                 {finalMs ? formatDuration(finalMs) : '--'}
               </div>
-              <p className="mt-2 text-sm text-bone">
+              <p className="mt-2 font-term text-[18px] text-bone">
                 Onboarded in {finalMs ? formatDuration(finalMs) : '--'}
               </p>
               {misses > 0 ? (
-                <p className="text-[11px] text-ash">with {misses} miss(es)</p>
+                <p className="font-term text-[16px] text-ash">with {misses} miss(es)</p>
               ) : null}
             </div>
 
             {noProfile ? (
               <div className="space-y-3">
-                <p className="text-xs text-amber">
+                <p className="font-term text-[17px] text-amber">
                   Nice run! Open GleanAI from the Telegram bot to save your time,
                   earn points, and get a shareable card.
                 </p>
                 <Link href={homeHref} className="arcade-btn">
-                  ◂ Back to menu
+                  <span className="h-3 w-3 text-phosphor"><PixelArrowLeft /></span>
+                  Back to menu
                 </Link>
               </div>
             ) : error ? (
-              <p className="text-xs text-magenta">{error}</p>
+              <p className="font-term text-[17px] text-magenta">{error}</p>
             ) : (
               <div className="flex flex-wrap items-center justify-center gap-3">
-                <button className="arcade-btn" onClick={share}>
+                <button className="arcade-btn-cyan" onClick={share}>
                   {copied ? 'Link copied!' : 'Share result'}
                 </button>
                 {resultUrl ? (
                   <Link
                     href={resultUrl}
-                    className="text-[11px] uppercase tracking-wider text-cyan underline"
+                    className="font-term text-[16px] uppercase tracking-[0.1em] text-cyan underline"
                   >
                     view card
                   </Link>
                 ) : null}
                 <Link
                   href={homeHref}
-                  className="text-[11px] uppercase tracking-[0.25em] text-ash hover:text-phosphor"
+                  className="font-term text-[16px] uppercase tracking-[0.2em] text-ash hover:text-phosphor"
                 >
                   ◂ menu
                 </Link>
@@ -289,7 +330,7 @@ export default function SprintPage() {
             <div>
               <button
                 onClick={start}
-                className="text-[11px] uppercase tracking-[0.25em] text-ash hover:text-phosphor"
+                className="font-term text-[16px] uppercase tracking-[0.2em] text-ash hover:text-phosphor"
               >
                 ↻ run again
               </button>

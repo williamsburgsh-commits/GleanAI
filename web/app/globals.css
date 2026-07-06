@@ -3,45 +3,100 @@
 @tailwind utilities;
 
 :root {
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --font-display: 'Press Start 2P', var(--font-mono);
+  /* single global scale for "pixel" rendering of boxy elements */
+  --px: 4px;
 }
 
 @layer base {
   html,
   body {
     @apply bg-void text-bone;
-    font-family: var(--font-mono);
-    -webkit-font-smoothing: antialiased;
+    font-family: 'VT323', ui-monospace, monospace;
+    /* VT323 is designed ~20px — bump the base so body copy looks right */
+    font-size: 18px;
+    line-height: 1.35;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+    /* disable sub-pixel rounding so 1px lines stay crisp */
+    text-rendering: geometricPrecision;
   }
 
-  /* Animated grid floor + vignette behind everything */
+  /* The CRT tube: a flat dark surface with faint phosphor tint, no gradient soup */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    z-index: -2;
+    z-index: -3;
     background:
-      radial-gradient(circle at 50% 0%, rgba(57, 255, 122, 0.08), transparent 55%),
-      linear-gradient(180deg, #05060a 0%, #070910 60%, #05060a 100%);
+      radial-gradient(circle at 50% 18%, rgba(39, 255, 125, 0.05), transparent 60%),
+      #0a0e15;
   }
 
+  /* Static scanlines baked onto the whole page — faint horizontal lines */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
-    z-index: -1;
-    background-image:
-      linear-gradient(rgba(57, 255, 122, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(57, 255, 122, 0.06) 1px, transparent 1px);
-    background-size: 38px 38px;
-    mask-image: radial-gradient(circle at 50% 30%, black, transparent 80%);
-    -webkit-mask-image: radial-gradient(circle at 50% 30%, black, transparent 80%);
+    z-index: 9999;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.22) 3px,
+      rgba(0, 0, 0, 0) 4px
+    );
+    /* subtle screen curvature + vignette: darken & pinch the corners */
+    box-shadow:
+      inset 0 0 120px 20px rgba(0, 0, 0, 0.55),
+      inset 0 0 30px 0 rgba(0, 0, 0, 0.6);
+    border-radius: 14px;
+    mix-blend-mode: multiply;
+    opacity: 0.9;
+  }
+
+  /* A slow rolling brighter scan-band that drifts down the tube */
+  .crt-roll::before {
+    content: '';
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 160px;
+    z-index: 9998;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0.025),
+      rgba(255, 255, 255, 0)
+    );
+    animation: scanroll 8s linear infinite;
+  }
+
+  ::selection {
+    background: #27ff7d;
+    color: #06080d;
+  }
+
+  /* crisp, square focus rings — no rounded blur halo */
+  *:focus-visible {
+    outline: 2px solid #27ff7d;
+    outline-offset: 2px;
+  }
+
+  /* inputs: pixel-bordered fields, no rounded corners */
+  input,
+  textarea,
+  select {
+    font-family: 'VT323', ui-monospace, monospace;
   }
 }
 
 @layer components {
-  /* Scanline overlay for CRT feel */
+  /* ───────────────────────── CRT / cabinet surfaces ───────────────────────── */
+
+  /* faint per-panel scanlines (kept light; the global overlay does the heavy lifting) */
   .scanlines {
     position: relative;
   }
@@ -53,44 +108,200 @@
     background: repeating-linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0) 0px,
-      rgba(0, 0, 0, 0) 2px,
-      rgba(0, 0, 0, 0.25) 3px,
-      rgba(0, 0, 0, 0) 4px
+      rgba(0, 0, 0, 0) 3px,
+      rgba(0, 0, 0, 0.12) 4px,
+      rgba(0, 0, 0, 0) 5px
     );
     mix-blend-mode: multiply;
-    border-radius: inherit;
   }
 
+  /*
+   * .crt-panel — an arcade-cabinet module. Sharp 2px border, dark screen face,
+   * a hard inset bevel (top/left highlight, bottom/right shadow) to read as a
+   * recessed screen bezel. No backdrop blur, no soft glow.
+   */
   .crt-panel {
-    @apply relative rounded-md border border-phosphor/30 bg-carbon/80 shadow-crt backdrop-blur-sm;
+    @apply relative bg-screen;
+    border: 2px solid #1b2130;
+    border-radius: 0;
+    box-shadow:
+      inset 2px 2px 0 0 rgba(255, 255, 255, 0.04),
+      inset -2px -2px 0 0 rgba(0, 0, 0, 0.6),
+      0 0 0 1px #06080d;
   }
 
   .crt-tag {
-    @apply inline-flex items-center gap-2 rounded-sm border border-phosphor/40 bg-phosphor/10 px-2 py-1 text-[10px] uppercase tracking-[0.25em] text-phosphor;
+    @apply inline-flex items-center gap-2 bg-screen px-2 py-1 text-[12px] uppercase tracking-[0.18em];
+    border: 1px solid #2bd9ff;
+    color: #2bd9ff;
+    border-radius: 0;
+    line-height: 1;
   }
 
+  /* ─────────────────────────────── text ─────────────────────────────── */
+
+  /* phosphor glow is reserved — only for the few "live" readouts (timer, score).
+   * Everywhere else uses flat color so the page doesn't read as generic neon. */
   .glow-text {
-    text-shadow: 0 0 6px rgba(57, 255, 122, 0.55), 0 0 18px rgba(57, 255, 122, 0.25);
+    text-shadow: 0 0 5px rgba(39, 255, 125, 0.45);
   }
   .glow-magenta {
-    text-shadow: 0 0 6px rgba(255, 61, 166, 0.6), 0 0 18px rgba(255, 61, 166, 0.3);
+    text-shadow: 0 0 5px rgba(255, 61, 166, 0.5);
+  }
+  .glow-cyan {
+    text-shadow: 0 0 5px rgba(43, 217, 255, 0.45);
+  }
+  .glow-amber {
+    text-shadow: 0 0 5px rgba(255, 180, 55, 0.45);
   }
 
+  /* pixelated rendering for the 8-bit sprite svgs */
+  .pixelated {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    shape-rendering: crispEdges;
+  }
+
+  /* ──────────────────────────── arcade buttons ──────────────────────────── */
+
+  /*
+   * .arcade-btn — a chunky tactile arcade button.
+   *  - thick 3px border
+   *  - a hard "plunger" drop-shadow below it (the dark base it sits on)
+   *  - on :active it depresses (translateY) and the plunger flattens → 3D press
+   *  - primary variant gets the slow "insert coin" attract blink
+   */
   .arcade-btn {
-    @apply relative inline-flex items-center justify-center gap-2 rounded-sm border-2 border-phosphor bg-phosphor/10 px-6 py-3 text-sm font-bold uppercase tracking-[0.2em] text-phosphor transition-all duration-150;
-    box-shadow: 0 4px 0 0 rgba(57, 255, 122, 0.5), 0 0 18px rgba(57, 255, 122, 0.2);
+    @apply relative inline-flex items-center justify-center gap-2 px-6 py-3 text-[12px] font-pixel uppercase tracking-[0.12em];
+    background: #0a140d;
+    color: #27ff7d;
+    border: 3px solid #27ff7d;
+    border-radius: 0;
+    box-shadow: 0 5px 0 0 #04130a, 0 6px 0 0 rgba(0, 0, 0, 0.6);
+    transition: transform 0.05s linear, box-shadow 0.05s linear, background 0.1s linear;
+    text-shadow: 0 0 5px rgba(39, 255, 125, 0.4);
   }
   .arcade-btn:hover {
-    @apply bg-phosphor/20;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 0 0 rgba(57, 255, 122, 0.6), 0 0 26px rgba(57, 255, 122, 0.35);
+    background: #10331c;
   }
   .arcade-btn:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 0 rgba(57, 255, 122, 0.5);
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 0 #04130a, 0 2px 0 0 rgba(0, 0, 0, 0.6);
   }
   .arcade-btn:disabled {
-    @apply cursor-not-allowed border-ash text-ash;
+    @apply cursor-not-allowed;
+    color: #4a5260;
+    border-color: #2a3140;
+    background: #0d111a;
     box-shadow: none;
+    text-shadow: none;
+  }
+
+  /* secondary (cyan) arcade button */
+  .arcade-btn-cyan {
+    @apply arcade-btn;
+    background: #04161d;
+    color: #2bd9ff;
+    border-color: #2bd9ff;
+    box-shadow: 0 5px 0 0 #04161d, 0 6px 0 0 rgba(0, 0, 0, 0.6);
+    text-shadow: 0 0 5px rgba(43, 217, 255, 0.4);
+  }
+  .arcade-btn-cyan:hover { background: #0a2b38; }
+  .arcade-btn-cyan:active { transform: translateY(4px); box-shadow: 0 1px 0 0 #04161d, 0 2px 0 0 rgba(0,0,0,0.6); }
+
+  /* "insert coin" attract — applies the slow coin blink to a CTA's accent label */
+  .coin-blink {
+    animation: coin 1.1s steps(1) infinite;
+  }
+
+  /* ──────────────────────────── quest / stage tiles ──────────────────────────── */
+
+  /*
+   * A "level select" stage tile. Locked = dimmed amber lock icon; cleared = green.
+   * Hover does a one-shot glitch, not a constant animation.
+   */
+  .stage-tile {
+    @apply relative bg-screen p-3 text-center;
+    border: 2px solid #1b2130;
+    border-radius: 0;
+    transition: border-color 0.08s linear, background 0.08s linear;
+  }
+  .stage-tile:hover {
+    border-color: #2bd9ff;
+    background: #0c1620;
+  }
+  .stage-tile.is-cleared {
+    border-color: #27ff7d;
+    background: #08160d;
+  }
+  .stage-tile.is-locked {
+    border-color: #1b2130;
+    background: #0a0d13;
+    color: #4a5260;
+  }
+
+  /* small pixel-bordered chip button (verify / wallet / filter) */
+  .chip-btn {
+    @apply px-2 py-1 text-[12px] uppercase tracking-[0.1em];
+    border: 1px solid #27ff7d;
+    background: #0a140d;
+    color: #27ff7d;
+    border-radius: 0;
+    transition: background 0.08s linear;
+  }
+  .chip-btn:hover { background: #10331c; }
+  .chip-btn:disabled { color: #4a5260; border-color: #2a3140; background: #0d111a; }
+
+  .chip-btn-amber {
+    @apply chip-btn;
+    border-color: #ffb437; color: #ffb437; background: #181206;
+  }
+  .chip-btn-amber:hover { background: #271a08; }
+
+  .chip-btn-magenta {
+    @apply chip-btn;
+    border-color: #ff3da6; color: #ff3da6; background: #1a0712;
+  }
+  .chip-btn-magenta:hover { background: #2a0e1f; }
+
+  /* pixel-bordered input field */
+  .crt-input {
+    @apply w-full px-3 py-2 text-[16px] text-bone;
+    background: #07090f;
+    border: 2px solid #1b2130;
+    border-radius: 0;
+    outline: none;
+  }
+  .crt-input:focus { border-color: #27ff7d; }
+
+  /* progress bar segments — blocky, not a smooth fill */
+  .crt-progress {
+    @apply relative h-3 w-full;
+    background: #07090f;
+    border: 2px solid #1b2130;
+  }
+  .crt-progress > i {
+    display: block;
+    height: 100%;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        #27ff7d 0,
+        #27ff7d 6px,
+        transparent 6px,
+        transparent 9px
+      );
+  }
+}
+
+@layer utilities {
+  /* one-shot glitch on hover — add `.hover-glitch:hover` to trigger */
+  .hover-glitch:hover {
+    animation: glitch 0.32s steps(2) 1;
+  }
+
+  /* keep boxy shadows crisp at small radii */
+  .pixel-corners {
+    border-radius: 0;
   }
 }

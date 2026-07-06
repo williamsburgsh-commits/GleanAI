@@ -1,14 +1,19 @@
 export function Ticker({ items }: { items: string[] }) {
   const doubled = [...items, ...items];
   return (
-    <div className="relative overflow-hidden border-y border-phosphor/20 bg-carbon/60 py-2">
-      <div className="animate-marquee flex w-max gap-8 whitespace-nowrap">
+    // Cabinet marquee: a bordered strip running an attract loop. Flat borders,
+    // one accent color, no glow soup.
+    <div
+      className="relative overflow-hidden bg-screen py-2"
+      style={{ borderTop: '2px solid #1b2130', borderBottom: '2px solid #1b2130' }}
+    >
+      <div className="animate-marquee flex w-max gap-8 whitespace-nowrap px-4">
         {doubled.map((item, i) => (
           <span
             key={i}
-            className="text-[11px] uppercase tracking-[0.25em] text-ash"
+            className="font-term text-[18px] uppercase tracking-[0.18em] text-ash"
           >
-            <span className="text-phosphor">/</span> {item}
+            <span className="text-phosphor">{'>'}</span> {item}
           </span>
         ))}
       </div>

@@ -52,22 +52,21 @@ export function RecipientPicker({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search username / id / wallet…"
-        className="mb-3 w-full rounded-sm border border-grid bg-slate/60 px-3 py-2 text-xs text-bone outline-none focus:border-phosphor"
+        className="crt-input mb-3 text-[16px]"
       />
-      <div className="max-h-52 overflow-y-auto rounded-sm border border-grid">
+      <div className="max-h-52 overflow-y-auto bg-screen" style={{ border: '2px solid #1b2130' }}>
         {loading && users.length === 0 ? (
-          <p className="p-3 text-[11px] text-ash">Searching…</p>
+          <p className="p-3 font-term text-[16px] text-ash">Searching…</p>
         ) : users.length === 0 ? (
-          <p className="p-3 text-[11px] text-ash">No users found.</p>
+          <p className="p-3 font-term text-[16px] text-ash">No users found.</p>
         ) : (
-          <ul className="divide-y divide-grid">
-            {users.map((u) => (
-              <li key={u.id}>
+          <ul>
+            {users.map((u, idx) => (
+              <li key={u.id} className={idx > 0 ? 'border-t-2 border-grid' : ''}>
                 <button
                   onClick={() => onPick(u)}
-                  className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[11px] transition-colors hover:bg-phosphor/10 ${
-                    selectedId === u.id ? 'bg-phosphor/15' : ''
-                  }`}
+                  className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left font-term text-[16px] transition-colors hover:bg-phosphor/10"
+                  style={selectedId === u.id ? { background: 'rgba(39,255,125,0.12)' } : undefined}
                 >
                   <span className="text-bone">
                     {u.telegram_username ? `@${u.telegram_username}` : `#${u.telegram_id}`}
