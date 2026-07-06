@@ -18,20 +18,12 @@ export function HomeHeroCta({ cluster }: { cluster: PhantomCluster }) {
   return (
     <div className="mt-8 flex flex-col items-center gap-3">
       {!ready ? null : wallet ? (
-        <>
-          <Link href="/play" className="arcade-btn">
-            <span className="h-3 w-3 text-phosphor">
-              <PixelArrowRight />
-            </span>
-            Continue
-          </Link>
-          <Link
-            href="/wallet-wars"
-            className="font-pixel text-[9px] uppercase tracking-[0.15em] text-cyan hover:text-phosphor"
-          >
-            Enter Wallet Wars →
-          </Link>
-        </>
+        <Link href="/play" className="arcade-btn">
+          <span className="h-3 w-3 text-phosphor">
+            <PixelArrowRight />
+          </span>
+          Continue
+        </Link>
       ) : (
         <ConnectButton cluster={cluster} />
       )}
