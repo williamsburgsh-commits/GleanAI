@@ -5,8 +5,7 @@ import {
   getUserByTelegramIdFull,
   awardBattlePoints,
   awardBattleQuests,
-  getBattleDailyCount,
-  getMaxBattlesPerDay,
+  getBattleDailyLimitError,
 } from '@/lib/wallet-wars/fighter.server';
 import {
   resolveBattle,
@@ -78,9 +77,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Cannot battle yourself.' }, { status: 400 });
     }
 
-    const daily = await getBattleDailyCount(supabase, acceptor.id);
-    if (daily >= getMaxBattlesPerDay()) {
-      return NextResponse.json({ error: 'Daily battle limit reached.' }, { status: 429 });
+    const dailyLimitError = await getBattleDailyLimitError(supabase, acceptor.id);
+    if (dailyLimitError) {
+      return NextResponse.json({ error: dailyLimitError }, { status: 429 });
     }
 
     const creator = unwrapUser(

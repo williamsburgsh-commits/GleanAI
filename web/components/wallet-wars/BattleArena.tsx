@@ -266,7 +266,7 @@ export function BattleArena({
 
   return (
     <div
-      className={`relative min-h-[75vh] overflow-hidden px-2 py-4 ${
+      className={`relative min-h-0 overflow-hidden px-2 py-4 ${
         entranceDone ? 'battle-thud-shake' : ''
       } ${dimArena ? 'battle-dim-overlay' : ''} ${whiteFlash ? 'battle-white-flash' : ''}`}
       onPointerDown={() => void soundRef.current.resume()}
@@ -298,9 +298,9 @@ export function BattleArena({
         </p>
       )}
 
-      <div className="relative grid grid-cols-2 gap-3">
+      <div className="battle-arena-stage relative">
         <VersusSpark visible={showSpark} />
-        <div className="relative">
+        <div className="battle-arena-slot relative">
           <CardScoreBadge wins={challengerWins} tone="phosphor" />
           <BattleCard
             fighter={challenger}
@@ -319,7 +319,7 @@ export function BattleArena({
             loserSlam={showOutcome && !challengerWon && !isTie}
           />
         </div>
-        <div className="relative">
+        <div className="battle-arena-slot relative">
           <CardScoreBadge wins={opponentWins} tone="magenta" />
           <BattleCard
             fighter={opponent}

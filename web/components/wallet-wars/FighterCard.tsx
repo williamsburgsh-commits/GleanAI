@@ -51,6 +51,7 @@ export function FighterCard({
   activeStat = null,
   decidingStat = false,
 }: FighterCardProps) {
+  const isBattle = variant === 'battle';
   const isMini = variant === 'mini';
   const stats = STAT_KEYS.map((key) => ({
     key,
@@ -77,22 +78,30 @@ export function FighterCard({
       className={`relative flex flex-col border-4 bg-[#0d1219] ${rarityBorderClass(fighter.rarity)} ${streakClass} ${
         shattered ? 'fighter-shatter' : ''
       } ${cracked ? 'battle-card-cracked' : ''} ${worried ? 'battle-card-worried' : ''} ${
-        isMini ? 'p-2' : 'p-3'
+        isMini ? 'p-2' : isBattle ? 'p-2' : 'p-3'
       }`}
       style={{ aspectRatio: '2.5 / 3.5' }}
     >
-      <div className="border-b-2 border-bone/20 pb-2">
-        <p className={`font-pixel uppercase text-phosphor ${isMini ? 'text-[7px]' : 'text-[9px]'}`}>
+      <div className={`border-b-2 border-bone/20 ${isBattle ? 'pb-1' : 'pb-2'}`}>
+        <p
+          className={`font-pixel uppercase text-phosphor ${
+            isMini ? 'text-[7px]' : isBattle ? 'text-[7px]' : 'text-[9px]'
+          }`}
+        >
           {fighter.name}
         </p>
-        <p className={`mt-1 font-pixel text-amber/90 ${isMini ? 'text-[6px]' : 'text-[7px]'}`}>
+        <p
+          className={`mt-0.5 font-pixel text-amber/90 ${
+            isMini ? 'text-[6px]' : isBattle ? 'text-[6px]' : 'text-[7px]'
+          }`}
+        >
           {rarityLabel(fighter.rarity)}
         </p>
       </div>
 
       <div
-        className={`relative mx-auto my-2 overflow-hidden border-2 border-bone/30 bg-void ${
-          isMini ? 'h-16 w-16' : 'h-24 w-24'
+        className={`relative mx-auto overflow-hidden border-2 border-bone/30 bg-void ${
+          isMini ? 'my-1 h-16 w-16' : isBattle ? 'my-1 h-14 w-14' : 'my-2 h-24 w-24'
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -110,7 +119,7 @@ export function FighterCard({
       </div>
 
       {!isMini && !hideStats && (
-        <div className="mt-auto space-y-2">
+        <div className={`mt-auto ${isBattle ? 'space-y-1' : 'space-y-2'}`}>
           {stats.map(({ key, value }) => (
             <StatBar
               key={key}
@@ -124,7 +133,11 @@ export function FighterCard({
               deciding={decidingStat && activeStat === key}
             />
           ))}
-          <div className="flex items-center justify-between border-t-2 border-bone/20 pt-2 font-pixel text-[7px] text-bone/70">
+          <div
+            className={`flex items-center justify-between border-t-2 border-bone/20 font-pixel text-bone/70 ${
+              isBattle ? 'pt-1 text-[6px]' : 'pt-2 text-[7px]'
+            }`}
+          >
             <span>PWR {fighter.totalScore}</span>
             {questTotal > 0 && <span className="text-phosphor">+QUEST {questTotal}</span>}
           </div>

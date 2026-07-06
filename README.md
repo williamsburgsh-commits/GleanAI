@@ -74,7 +74,8 @@ flowchart TD
 | Variable | Purpose |
 | -------- | ------- |
 | `FIGHTER_RESCAN_HOURS` | Cooldown between wallet rescans (default `24`) |
-| `MAX_BATTLES_PER_DAY` | Daily battle cap per user (default `10`) |
+| `BATTLE_DAILY_LIMIT_ENABLED` | Set to `true` before go-live; off by default for testing |
+| `MAX_BATTLES_PER_DAY` | Daily battle cap per user when limit enabled (default `10`) |
 | `TELEGRAM_COMMUNITY_CHAT_ID` | Telegram group/channel ID for `join-community` quest |
 | `WEB_APP_URL` | HTTPS base URL for battle invite share links |
 

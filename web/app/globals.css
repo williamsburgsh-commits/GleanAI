@@ -385,13 +385,49 @@
   }
 
   /* 3D card flip */
+  .battle-arena-stage {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 22rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (min-width: 640px) {
+    .battle-arena-stage {
+      gap: 1rem;
+      max-width: 28rem;
+    }
+  }
+
+  .battle-arena-slot {
+    position: relative;
+    width: min(42vw, 9.75rem);
+    max-width: 9.75rem;
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 640px) {
+    .battle-arena-slot {
+      width: min(20vw, 11.5rem);
+      max-width: 11.5rem;
+    }
+  }
+
   .battle-card-3d {
     perspective: 900px;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
   }
 
   .battle-card-3d-inner {
     position: relative;
+    width: 100%;
+    aspect-ratio: 2.5 / 3.5;
     transform-style: preserve-3d;
     transition: transform 0.55s ease-out;
   }

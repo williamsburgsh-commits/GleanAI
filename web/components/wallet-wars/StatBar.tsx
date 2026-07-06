@@ -43,13 +43,13 @@ export function StatBar({
       } ${deciding ? 'battle-stat-deciding' : ''}`}
       data-stat={stat}
     >
-      <div className="mb-1 flex items-center justify-between font-pixel text-[8px] uppercase tracking-wide text-bone/80">
+      <div className={`mb-0.5 flex items-center justify-between font-pixel uppercase tracking-wide text-bone/80 ${animate ? 'text-[6px]' : 'text-[8px]'}`}>
         <span className={active ? 'text-phosphor animate-blink' : ''}>{STAT_LABELS[stat]}</span>
         <span className={`${animate ? 'tabular-nums' : ''} ${!revealed ? 'opacity-30' : ''}`}>
           {revealed ? shown : '—'}
         </span>
       </div>
-      <div className="flex gap-[3px]">
+      <div className={`flex ${animate ? 'gap-[2px]' : 'gap-[3px]'}`}>
         {Array.from({ length: segments }).map((_, i) => (
           <div
             key={i}

@@ -225,10 +225,27 @@ export async function getBattleDailyCount(supabase: Supa, userId: string): Promi
   return count ?? 0;
 }
 
+/** GO-LIVE: set BATTLE_DAILY_LIMIT_ENABLED=true in production before launch. */
+export function isBattleDailyLimitEnabled(): boolean {
+  return process.env.BATTLE_DAILY_LIMIT_ENABLED === 'true';
+}
+
 export function getMaxBattlesPerDay(): number {
   const raw = process.env.MAX_BATTLES_PER_DAY;
   const n = raw ? Number(raw) : 10;
   return Number.isFinite(n) && n > 0 ? n : 10;
+}
+
+export async function getBattleDailyLimitError(
+  supabase: Supa,
+  userId: string
+): Promise<string | null> {
+  if (!isBattleDailyLimitEnabled()) return null;
+  const daily = await getBattleDailyCount(supabase, userId);
+  if (daily >= getMaxBattlesPerDay()) {
+    return 'Daily battle limit reached.';
+  }
+  return null;
 }
 
 export async function getUserByTelegramIdFull(

@@ -195,7 +195,7 @@ function BattleInner() {
 
   return (
     <BattleSoundProvider>
-      <main className="mx-auto max-w-3xl px-2 py-4">
+      <main className="mx-auto max-w-lg px-2 py-4">
         <Link href={homeHref} className="mb-2 inline-flex items-center gap-2 font-pixel text-[9px] text-cyan">
           <span className="inline-block h-4 w-4">
             <PixelArrowLeft />

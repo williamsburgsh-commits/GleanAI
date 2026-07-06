@@ -9,7 +9,7 @@ export function CardScoreBadge({
 }) {
   return (
     <div
-      className={`absolute -top-2 left-1/2 z-20 -translate-x-1/2 font-pixel text-[10px] ${
+      className={`absolute -top-2 left-1/2 z-20 -translate-x-1/2 font-pixel text-[8px] ${
         tone === 'phosphor' ? 'text-phosphor' : 'text-magenta'
       }`}
     >
