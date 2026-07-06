@@ -16,6 +16,47 @@ function isValidSolanaAddress(address: string): boolean {
   }
 }
 
+// GET /api/wallet?walletAddress=... — lookup which Telegram account owns a wallet.
+export async function GET(request: Request) {
+  const walletAddress = new URL(request.url).searchParams.get('walletAddress')?.trim() ?? '';
+  if (!walletAddress || !isValidSolanaAddress(walletAddress)) {
+    return NextResponse.json(
+      { error: 'A valid walletAddress query param is required.' },
+      { status: 400 }
+    );
+  }
+
+  let supabase;
+  try {
+    supabase = getServiceClient();
+  } catch (err) {
+    console.error('[api/wallet] config error', err);
+    return NextResponse.json({ error: 'Server is misconfigured.' }, { status: 500 });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('telegram_id, points')
+      .eq('wallet_address', walletAddress)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      return NextResponse.json({ telegramId: null, points: 0 });
+    }
+    return NextResponse.json({
+      telegramId: String(data.telegram_id),
+      points: data.points ?? 0,
+    });
+  } catch (err) {
+    console.error('[api/wallet] lookup error', err);
+    return NextResponse.json(
+      { error: 'Could not look up wallet.' },
+      { status: 500 }
+    );
+  }
+}
+
 // POST /api/wallet  { telegramId, walletAddress }
 // Links a connected Phantom wallet to the user's row (keyed by Telegram id).
 export async function POST(request: Request) {

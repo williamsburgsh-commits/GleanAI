@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useLayoutEffect } from 'react';
 import { FighterCard, type FighterCardData } from './FighterCard';
 import { createBattleTimeline } from '@/lib/wallet-wars/battleTimeline';
 import type { BattleResolution } from '@/lib/wallet-wars/battleResolver';
@@ -33,46 +33,63 @@ export function BattleArena({
   const skipRef = useRef<HTMLButtonElement>(null);
   const timelineStarted = useRef(false);
   const onDoneRef = useRef(onDone);
+  const battleRef = useRef({ resolution, challengerWon, pointsAwarded });
   onDoneRef.current = onDone;
+  battleRef.current = { resolution, challengerWon, pointsAwarded };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (timelineStarted.current) return;
 
-    const arena = arenaRef.current;
-    const challengerCard = challengerRef.current;
-    const opponentCard = opponentRef.current;
-    const flash = flashRef.current;
-    const victoryText = victoryRef.current;
-    const pointsEl = pointsRef.current;
-    const skipBtn = skipRef.current;
+    let cancelled = false;
+    let tl: ReturnType<typeof createBattleTimeline> | null = null;
 
-    if (!arena || !challengerCard || !opponentCard || !flash || !victoryText || !pointsEl || !skipBtn) {
-      return;
-    }
+    const start = () => {
+      if (cancelled || timelineStarted.current) return;
 
-    timelineStarted.current = true;
-    victoryText.textContent = challengerWon ? 'VICTORY' : 'DEFEAT';
+      const arena = arenaRef.current;
+      const challengerCard = challengerRef.current;
+      const opponentCard = opponentRef.current;
+      const flash = flashRef.current;
+      const victoryText = victoryRef.current;
+      const pointsEl = pointsRef.current;
+      const skipBtn = skipRef.current;
 
-    const tl = createBattleTimeline(
-      {
-        arena,
-        challengerCard,
-        opponentCard,
-        flash,
-        victoryText,
-        pointsEl,
-        skipBtn,
-      },
-      resolution,
-      challengerWon,
-      pointsAwarded,
-      () => onDoneRef.current()
-    );
+      if (!arena || !challengerCard || !opponentCard || !flash || !victoryText || !pointsEl || !skipBtn) {
+        return;
+      }
+
+      timelineStarted.current = true;
+      const { resolution: r, challengerWon: won, pointsAwarded: pts } = battleRef.current;
+      victoryText.textContent = won ? 'VICTORY' : 'DEFEAT';
+
+      tl = createBattleTimeline(
+        {
+          arena,
+          challengerCard,
+          opponentCard,
+          flash,
+          victoryText,
+          pointsEl,
+          skipBtn,
+        },
+        r,
+        won,
+        pts,
+        () => onDoneRef.current()
+      );
+    };
+
+    // Two frames so Telegram WebView has laid out card refs before GSAP runs.
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(start);
+    });
 
     return () => {
-      tl.kill();
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      tl?.kill();
     };
-  }, [challengerWon, pointsAwarded, resolution]);
+  }, []);
 
   return (
     <div

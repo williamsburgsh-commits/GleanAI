@@ -66,13 +66,14 @@ export function createBattleTimeline(
     return tl;
   }
 
-  gsap.set(refs.challengerCard, { x: -140, opacity: 0 });
-  gsap.set(refs.opponentCard, { x: 140, opacity: 0 });
+  // Slide in with transform only — opacity:0 breaks badly in some Telegram WebViews.
+  gsap.set(refs.challengerCard, { x: -140, clearProps: 'opacity' });
+  gsap.set(refs.opponentCard, { x: 140, clearProps: 'opacity' });
   gsap.set(refs.victoryText, { opacity: 0, scale: 0.7 });
   gsap.set(refs.pointsEl, { textContent: '+0' });
 
-  tl.to(refs.challengerCard, { x: 0, opacity: 1, duration: 0.55 })
-    .to(refs.opponentCard, { x: 0, opacity: 1, duration: 0.55 }, '<0.08')
+  tl.to(refs.challengerCard, { x: 0, duration: 0.55 })
+    .to(refs.opponentCard, { x: 0, duration: 0.55 }, '<0.08')
     .to({}, { duration: 0.35 });
 
   for (const round of resolution.rounds) {

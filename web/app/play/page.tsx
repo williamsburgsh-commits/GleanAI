@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
 import {
   getStoredWallet,
-  getTelegramId,
   clearConnection,
 } from '@/lib/phantom';
+import { resolveTelegramId } from '@/lib/resolvePlayer';
 import {
   PixelArrowLeft,
   PixelBolt,
@@ -57,12 +57,24 @@ export default function Play() {
   }, []);
 
   useEffect(() => {
-    const w = getStoredWallet();
-    const t = getTelegramId();
-    setWallet(w);
-    setTg(t);
-    setReady(true);
-    loadQuests(t);
+    let cancelled = false;
+
+    async function init() {
+      const w = getStoredWallet();
+      setWallet(w);
+
+      const t = await resolveTelegramId(w);
+      if (cancelled) return;
+
+      setTg(t);
+      setReady(true);
+      await loadQuests(t);
+    }
+
+    init();
+    return () => {
+      cancelled = true;
+    };
   }, [loadQuests]);
 
   function disconnect() {
@@ -181,8 +193,19 @@ export default function Play() {
       {!tg ? (
         <CrtPanel label="HEADS UP" tone="amber" className="mb-6">
           <p className="font-term text-[17px] leading-snug text-ash">
-            No player ID on this device. Open GleanAI from the Telegram bot so
-            your quests and points sync to your account.
+            No player ID on this device. Your wallet is connected locally, but
+            quests and points are tied to your Telegram account — not the wallet
+            alone.
+          </p>
+          <p className="mt-3 font-term text-[16px] leading-snug text-ash">
+            Open the{' '}
+            <a href="https://t.me/GleanAI_bot" className="text-cyan underline">
+              GleanAI bot
+            </a>{' '}
+            and tap <span className="text-phosphor">Play GleanAI</span> for the
+            full Mini App. Use{' '}
+            <span className="text-phosphor">glean-ai-web.vercel.app</span> (not a
+            preview URL) so your session syncs.
           </p>
         </CrtPanel>
       ) : null}
