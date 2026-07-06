@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
+import { GameModeCards } from '@/components/GameModeCards';
 import { useTelegram } from '@/components/TelegramProvider';
 import {
   getStoredWallet,
@@ -11,10 +12,8 @@ import {
 import { resolveTelegramId } from '@/lib/resolvePlayer';
 import {
   PixelArrowLeft,
-  PixelBolt,
   PixelStar,
   PixelCheck,
-  PixelWallet,
 } from '@/components/PixelArt';
 
 function shorten(addr: string) {
@@ -193,13 +192,9 @@ export default function Play() {
             </div>
           </div>
         </div>
-        <div className="mt-4 border-t-2 border-grid pt-4 text-center">
-          <Link href="/sprint" className="arcade-btn">
-            <span className="h-3 w-3 text-phosphor"><PixelBolt /></span>
-            Play Solana Sprint
-          </Link>
-        </div>
       </CrtPanel>
+
+      <GameModeCards className="mb-6" />
 
       {!tg ? (
         <CrtPanel label="HEADS UP" tone="amber" className="mb-6">

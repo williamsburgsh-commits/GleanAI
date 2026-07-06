@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
+import { GameModeCards } from '@/components/GameModeCards';
 import { useTelegram } from '@/components/TelegramProvider';
 import { getStoredWallet } from '@/lib/phantom';
 import { getLevelProgress } from '@/lib/levels';
@@ -11,9 +11,7 @@ import {
   PixelStar,
   PixelTrophy,
   PixelCheck,
-  PixelBolt,
   PixelLock,
-  PixelArrowRight,
   PixelWallet,
 } from '@/components/PixelArt';
 
@@ -291,39 +289,7 @@ export default function MiniApp() {
         </div>
       </CrtPanel>
 
-      {/* Wallet Wars hero CTA */}
-      <Link href="/wallet-wars" className="block">
-        <div className="crt-panel scanlines p-4 transition-transform active:scale-[0.98]" style={{ borderColor: '#27ff7d55' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 text-phosphor">
-                <PixelBolt />
-              </div>
-              <div>
-                <div className="font-pixel text-[11px] text-phosphor glow-text">
-                  WALLET WARS
-                </div>
-                <div className="mt-1 font-term text-[15px] text-ash">
-                  Scan your fighter · battle · mint badge
-                </div>
-              </div>
-            </div>
-            <span className="h-5 w-5 text-phosphor glow-text">
-              <PixelArrowRight />
-            </span>
-          </div>
-        </div>
-      </Link>
-
-      {/* Sprint secondary */}
-      <Link href="/sprint" className="block">
-        <div className="crt-panel scanlines p-3 opacity-90" style={{ borderColor: '#ff3da633' }}>
-          <div className="flex items-center justify-between">
-            <div className="font-term text-[14px] text-ash">Solana Sprint · side mode</div>
-            <span className="h-4 w-4 text-magenta"><PixelArrowRight /></span>
-          </div>
-        </div>
-      </Link>
+      <GameModeCards />
 
       {/* Wallet nudge for on-chain quests */}
       {!walletLinked ? (
