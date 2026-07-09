@@ -1,6 +1,6 @@
 import { supabase } from '../supabase.js';
 import { unwrap } from '../lib/errors.js';
-import { buildWebLink } from '../lib/links.js';
+import { buildMiniAppPath } from '../lib/links.js';
 
 export async function receiptCommand(ctx) {
   const telegramId = ctx.from?.id;
@@ -24,7 +24,7 @@ export async function receiptCommand(ctx) {
     ? `Wallet: ${user.wallet_address.slice(0, 4)}…${user.wallet_address.slice(-4)}`
     : 'No wallet linked yet — connect Phantom in the app first.';
 
-  const url = buildWebLink(String(telegramId), 'receipt');
+  const url = buildMiniAppPath('receipt');
 
   await ctx.reply(
     `🧾 The Receipt\n\n${walletLine}\n\nPrint your lifetime Solana fee receipt and flex your savings vs Ethereum.`

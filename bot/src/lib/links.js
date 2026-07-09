@@ -15,6 +15,12 @@ export function buildMiniAppUrl() {
   return `${base}/app`;
 }
 
+export function buildMiniAppPath(path = 'app') {
+  const base = config.webAppUrl.replace(/\/$/, '');
+  const suffix = path.replace(/^\//, '');
+  return suffix ? `${base}/${suffix}` : `${base}/app`;
+}
+
 // Telegram only allows web_app buttons / menu buttons over HTTPS.
 export function isWebAppCapable() {
   return config.webAppUrl.trim().toLowerCase().startsWith('https://');

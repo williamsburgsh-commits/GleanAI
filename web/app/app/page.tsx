@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
 import { GameModeCards } from '@/components/GameModeCards';
 import { useTelegram } from '@/components/TelegramProvider';
@@ -366,6 +367,10 @@ export default function MiniApp() {
                       <button onClick={openWalletConnect} className="chip-btn-amber">
                         wallet
                       </button>
+                    ) : q.slug === 'print-receipt' ? (
+                      <Link href="/receipt" className="chip-btn-cyan">
+                        print
+                      </Link>
                     ) : q.autoVerifiable ? (
                       <button
                         onClick={() => onVerify(q.slug)}

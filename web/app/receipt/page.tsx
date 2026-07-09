@@ -33,6 +33,7 @@ export default function ReceiptPage() {
   const [ready, setReady] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [progressIdx, setProgressIdx] = useState(0);
   const [previewData, setPreviewData] = useState<ReceiptData | null>(null);
 
@@ -49,18 +50,21 @@ export default function ReceiptPage() {
     [webApp]
   );
 
+  const resolveWallet = useCallback((): string | null => {
+    return getStoredWallet() || player?.walletAddress || null;
+  }, [player?.walletAddress]);
+
   useEffect(() => {
     captureTelegramIdFromUrl();
-    const linked = getStoredWallet() || player?.walletAddress || null;
-    setWallet(linked);
+    setWallet(resolveWallet());
     setReady(true);
 
     function refresh() {
-      setWallet(getStoredWallet() || player?.walletAddress || null);
+      setWallet(resolveWallet());
     }
     window.addEventListener('focus', refresh);
     return () => window.removeEventListener('focus', refresh);
-  }, [player?.walletAddress]);
+  }, [resolveWallet]);
 
   useEffect(() => {
     if (phase !== 'submitting' && phase !== 'printing') return;
@@ -70,15 +74,31 @@ export default function ReceiptPage() {
     return () => clearInterval(interval);
   }, [phase]);
 
+  function navigateToResult(resultUrl: string, receiptId?: string) {
+    const path =
+      receiptId != null
+        ? `/receipt/result/${receiptId}`
+        : resultUrl.startsWith('http')
+          ? `${new URL(resultUrl).pathname}${new URL(resultUrl).search}`
+          : resultUrl;
+    router.push(path);
+  }
+
   async function onPrint() {
-    const w = getStoredWallet();
-    if (!w) return;
+    const w = resolveWallet();
+    if (!w) {
+      setError('Connect your wallet first, then tap refresh.');
+      haptic('error');
+      return;
+    }
 
     setError(null);
+    setNotice(null);
     setPhase('printing');
     setProgressIdx(0);
 
     const telegramId = player?.telegramId ?? getTelegramId();
+    const scanCluster = resolveReceiptScanCluster(cluster);
 
     try {
       const res = await fetch('/api/receipt', {
@@ -86,7 +106,7 @@ export default function ReceiptPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletAddress: w,
-          cluster,
+          cluster: scanCluster,
           ...(telegramId ? { telegramId } : {}),
         }),
       });
@@ -111,11 +131,15 @@ export default function ReceiptPage() {
       setPhase('submitting');
       haptic('success');
 
+      if (data.cached) {
+        setNotice('Showing your latest receipt (24h cooldown — fresh scan tomorrow).');
+      }
+
       // Brief print animation then redirect to share page.
       setTimeout(() => {
         setPhase('done');
-        router.push(data.resultUrl);
-      }, 1800);
+        navigateToResult(data.resultUrl, data.receiptId);
+      }, data.cached ? 600 : 1800);
     } catch (err) {
       setPhase('idle');
       setPreviewData(null);
@@ -180,6 +204,10 @@ export default function ReceiptPage() {
             <p className="font-term text-[15px] uppercase tracking-[0.2em] text-amber animate-pulse">
               {PROGRESS_TICKS[progressIdx]}
             </p>
+          )}
+
+          {notice && (
+            <p className="font-term text-[15px] text-amber">{notice}</p>
           )}
 
           {error && (
