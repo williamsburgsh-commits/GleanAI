@@ -1,0 +1,1 @@
+{"success":false,"error":{"message":"Invalid API key","hint":"Double check your Supabase `anon` or `service_role` API key."},"data":null,"count":null,"status":401,"statusText":"Unauthorized"}

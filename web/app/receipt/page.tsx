@@ -9,6 +9,7 @@ import { ReceiptPrinter } from '@/components/receipt/ReceiptPrinter';
 import type { ReceiptData } from '@/components/receipt/ReceiptPaper';
 import { useTelegram } from '@/components/TelegramProvider';
 import { getPublicConfig } from '@/lib/config';
+import { clusterLabel, resolveReceiptScanCluster } from '@/lib/solana/cluster';
 import { getStoredWallet, getTelegramId } from '@/lib/phantom';
 import { captureTelegramIdFromUrl } from '@/lib/resolvePlayer';
 import { PixelArrowLeft } from '@/components/PixelArt';
@@ -25,6 +26,7 @@ const PROGRESS_TICKS = [
 export default function ReceiptPage() {
   const router = useRouter();
   const { cluster } = getPublicConfig();
+  const networkLabel = clusterLabel(resolveReceiptScanCluster(cluster));
   const { inTelegram, webApp, player } = useTelegram();
 
   const [wallet, setWallet] = useState<string | null>(null);
@@ -84,6 +86,7 @@ export default function ReceiptPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletAddress: w,
+          cluster,
           ...(telegramId ? { telegramId } : {}),
         }),
       });
@@ -102,6 +105,7 @@ export default function ReceiptPage() {
         savingsUsd: data.savingsUsd,
         walletAgeDays: data.walletAgeDays ?? 0,
         isFeeExtrapolated: data.isFeeExtrapolated ?? false,
+        networkLabel: data.networkLabel ?? networkLabel,
       });
 
       setPhase('submitting');
@@ -194,7 +198,7 @@ export default function ReceiptPage() {
           )}
 
           <p className="font-term text-[12px] uppercase tracking-[0.15em] text-ash">
-            one fresh scan per wallet every 24h · estimates only
+            scanning {networkLabel} · one fresh scan per wallet every 24h · estimates only
           </p>
         </div>
       </CrtPanel>

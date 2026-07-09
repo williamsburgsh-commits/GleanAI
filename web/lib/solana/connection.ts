@@ -1,4 +1,5 @@
 import { Connection } from '@solana/web3.js';
+import { normalizeCluster } from './cluster';
 
 export type SolanaCluster = 'mainnet-beta' | 'mainnet' | 'devnet' | 'testnet';
 
@@ -18,8 +19,8 @@ function alchemySubdomain(cluster: SolanaCluster): string {
 }
 
 // Resolves the RPC URL: an explicit ALCHEMY_RPC_URL wins, otherwise it is
-// derived from ALCHEMY_API_KEY + SOLANA_CLUSTER.
-export function resolveRpcUrl(): string {
+// derived from ALCHEMY_API_KEY + cluster.
+export function resolveRpcUrl(cluster?: SolanaCluster): string {
   const explicit = process.env.ALCHEMY_RPC_URL?.trim();
   if (explicit) return explicit;
 
@@ -29,17 +30,19 @@ export function resolveRpcUrl(): string {
       'Missing Alchemy config: set ALCHEMY_RPC_URL or ALCHEMY_API_KEY in the environment.'
     );
   }
-  const cluster = (process.env.SOLANA_CLUSTER?.trim() ||
-    'devnet') as SolanaCluster;
-  return `https://${alchemySubdomain(cluster)}.g.alchemy.com/v2/${key}`;
+  const resolved = cluster ?? normalizeCluster(process.env.SOLANA_CLUSTER);
+  return `https://${alchemySubdomain(resolved)}.g.alchemy.com/v2/${key}`;
 }
 
-let cached: Connection | null = null;
+const cache = new Map<string, Connection>();
 
-export function getConnection(): Connection {
-  if (cached) return cached;
-  cached = new Connection(resolveRpcUrl(), {
-    commitment: 'confirmed',
-  });
-  return cached;
+export function getConnection(opts?: { cluster?: SolanaCluster }): Connection {
+  const cluster = opts?.cluster ?? normalizeCluster(process.env.SOLANA_CLUSTER);
+  const url = resolveRpcUrl(cluster);
+  let conn = cache.get(url);
+  if (!conn) {
+    conn = new Connection(url, { commitment: 'confirmed' });
+    cache.set(url, conn);
+  }
+  return conn;
 }

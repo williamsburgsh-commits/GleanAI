@@ -10,6 +10,7 @@ export interface ReceiptData {
   savingsUsd: number;
   walletAgeDays: number;
   isFeeExtrapolated: boolean;
+  networkLabel?: string;
 }
 
 interface ReceiptPaperProps {
@@ -46,6 +47,11 @@ export function ReceiptPaper({ data, className = '' }: ReceiptPaperProps) {
           <span className="text-[#666]">WALLET:</span>{' '}
           {shortenWallet(data.walletAddress)}
         </p>
+        {data.networkLabel ? (
+          <p>
+            <span className="text-[#666]">NETWORK:</span> {data.networkLabel}
+          </p>
+        ) : null}
         <p>
           <span className="text-[#666]">MEMBER SINCE:</span>{' '}
           {memberSinceLabel(data.walletAgeDays)}

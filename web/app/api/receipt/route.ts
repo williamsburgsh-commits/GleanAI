@@ -12,6 +12,8 @@ import {
 } from '@/lib/receipt/receipt.server';
 import { getOrCreateUserByTelegramId } from '@/lib/users.server';
 import { getQuestBySlug, recordCompletion } from '@/lib/quests.server';
+import { normalizeCluster, clusterLabel, resolveReceiptScanCluster } from '@/lib/solana/cluster';
+import type { SolanaCluster } from '@/lib/solana/connection';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -36,12 +38,11 @@ function receiptPayload(row: {
   tx_count_capped: boolean;
   wallet_age_days?: number;
   is_fee_extrapolated?: boolean;
+  scanned_cluster?: string;
 }) {
   const origin =
     process.env.NEXT_PUBLIC_WEB_APP_URL?.replace(/\/$/, '') ||
-    process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : '';
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
   const resultUrl =
     row.result_card_url || `${origin}/receipt/result/${row.id}`;
 
@@ -55,6 +56,10 @@ function receiptPayload(row: {
     savingsUsd: Number(row.savings_usd),
     walletAgeDays: row.wallet_age_days ?? 0,
     isFeeExtrapolated: row.is_fee_extrapolated ?? false,
+    scannedCluster: row.scanned_cluster ?? 'mainnet-beta',
+    networkLabel: clusterLabel(
+      normalizeCluster(row.scanned_cluster ?? 'mainnet-beta')
+    ),
   };
 }
 
@@ -102,6 +107,9 @@ async function creditReceiptQuest(
 export async function GET(request: Request) {
   const walletAddress =
     new URL(request.url).searchParams.get('walletAddress')?.trim() ?? '';
+  const cluster = resolveReceiptScanCluster(
+    new URL(request.url).searchParams.get('cluster')
+  );
   if (!walletAddress || !isValidSolanaAddress(walletAddress)) {
     return NextResponse.json(
       { error: 'A valid walletAddress query param is required.' },
@@ -117,7 +125,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const latest = await getLatestReceiptForWallet(supabase, walletAddress);
+    const latest = await getLatestReceiptForWallet(
+      supabase,
+      walletAddress,
+      cluster
+    );
     if (!latest) {
       return NextResponse.json({ receipt: null });
     }
@@ -131,9 +143,9 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/receipt { walletAddress, telegramId? }
+// POST /api/receipt { walletAddress, telegramId?, cluster? }
 export async function POST(request: Request) {
-  let body: { walletAddress?: string; telegramId?: string };
+  let body: { walletAddress?: string; telegramId?: string; cluster?: string };
   try {
     body = await request.json();
   } catch {
@@ -142,6 +154,7 @@ export async function POST(request: Request) {
 
   const walletAddress = (body.walletAddress || '').trim();
   const telegramId = (body.telegramId || '').toString().trim();
+  const scannedCluster: SolanaCluster = resolveReceiptScanCluster(body.cluster);
 
   if (!walletAddress || !isValidSolanaAddress(walletAddress)) {
     return NextResponse.json(
@@ -158,7 +171,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const latest = await getLatestReceiptForWallet(supabase, walletAddress);
+    const latest = await getLatestReceiptForWallet(
+      supabase,
+      walletAddress,
+      scannedCluster
+    );
     if (latest) {
       const cooldown = canPrintReceipt(latest.created_at);
       if (!cooldown.allowed) {
@@ -170,7 +187,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const scan = await fetchReceiptData(walletAddress);
+    const scan = await fetchReceiptData(walletAddress, { cluster: scannedCluster });
     const solPriceUsd = await fetchSolPriceUsd();
     const solFeesUsd = (scan.solFeesLamports / 1e9) * solPriceUsd;
     const ethEstimateUsd = estimateEthFeesUsd(scan.txCount);
@@ -191,6 +208,7 @@ export async function POST(request: Request) {
       walletAgeDays: scan.walletAgeDays,
       feeSampleSize: scan.feeSampleSize,
       isFeeExtrapolated: scan.isFeeExtrapolated,
+      scannedCluster,
     });
 
     const origin = new URL(request.url).origin;

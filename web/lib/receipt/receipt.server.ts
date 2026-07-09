@@ -18,6 +18,7 @@ export interface WalletReceiptRow {
   fee_sample_size: number;
   is_fee_extrapolated: boolean;
   methodology_version: string;
+  scanned_cluster: string;
   result_card_url: string | null;
   created_at: string;
 }
@@ -54,6 +55,7 @@ export async function createReceipt(
     walletAgeDays: number;
     feeSampleSize: number;
     isFeeExtrapolated: boolean;
+    scannedCluster: string;
   }
 ): Promise<WalletReceiptRow> {
   const { data, error } = await supabase
@@ -72,6 +74,7 @@ export async function createReceipt(
       fee_sample_size: params.feeSampleSize,
       is_fee_extrapolated: params.isFeeExtrapolated,
       methodology_version: METHODOLOGY_VERSION,
+      scanned_cluster: params.scannedCluster,
     })
     .select('*')
     .single();
@@ -106,12 +109,19 @@ export async function getReceipt(
 
 export async function getLatestReceiptForWallet(
   supabase: Supa,
-  walletAddress: string
+  walletAddress: string,
+  scannedCluster?: string
 ): Promise<WalletReceiptRow | null> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('wallet_receipts')
     .select('*')
-    .eq('wallet_address', walletAddress)
+    .eq('wallet_address', walletAddress);
+
+  if (scannedCluster) {
+    query = query.eq('scanned_cluster', scannedCluster);
+  }
+
+  const { data, error } = await query
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();

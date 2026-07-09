@@ -7,6 +7,7 @@ import { ReceiptPaper } from '@/components/receipt/ReceiptPaper';
 import { getServiceClient } from '@/lib/supabaseServer';
 import { getReceipt } from '@/lib/receipt/receipt.server';
 import { buildReceiptShareText, formatUsd } from '@/lib/format';
+import { clusterLabel, normalizeCluster } from '@/lib/solana/cluster';
 
 export const runtime = 'nodejs';
 
@@ -82,6 +83,9 @@ export default async function ReceiptResult({
               savingsUsd: Number(receipt.savings_usd),
               walletAgeDays: receipt.wallet_age_days,
               isFeeExtrapolated: receipt.is_fee_extrapolated,
+              networkLabel: clusterLabel(
+                normalizeCluster(receipt.scanned_cluster ?? 'mainnet-beta')
+              ),
             }}
           />
 

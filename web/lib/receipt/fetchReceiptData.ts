@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { getConnection } from '@/lib/solana/connection';
+import { getConnection, type SolanaCluster } from '@/lib/solana/connection';
 
 const MS_PER_DAY = 86_400_000;
 const TX_COUNT_CAP = 10_000;
@@ -87,9 +87,10 @@ async function sumFeesForSignatures(
 
 export async function fetchReceiptData(
   walletAddress: string,
-  conn: Connection = getConnection()
+  opts?: { cluster?: SolanaCluster; conn?: Connection }
 ): Promise<ReceiptScanResult> {
   const owner = toPublicKey(walletAddress);
+  const conn = opts?.conn ?? getConnection({ cluster: opts?.cluster });
   const { signatures, capped } = await paginateSignatures(conn, owner);
   const txCount = signatures.length;
 
