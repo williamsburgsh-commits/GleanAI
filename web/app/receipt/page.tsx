@@ -10,6 +10,7 @@ import type { ReceiptData } from '@/components/receipt/ReceiptPaper';
 import { useTelegram } from '@/components/TelegramProvider';
 import { getPublicConfig } from '@/lib/config';
 import { getStoredWallet, getTelegramId } from '@/lib/phantom';
+import { captureTelegramIdFromUrl } from '@/lib/resolvePlayer';
 import { PixelArrowLeft } from '@/components/PixelArt';
 
 type Phase = 'idle' | 'printing' | 'submitting' | 'done';
@@ -24,7 +25,7 @@ const PROGRESS_TICKS = [
 export default function ReceiptPage() {
   const router = useRouter();
   const { cluster } = getPublicConfig();
-  const { inTelegram, webApp } = useTelegram();
+  const { inTelegram, webApp, player } = useTelegram();
 
   const [wallet, setWallet] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -47,15 +48,17 @@ export default function ReceiptPage() {
   );
 
   useEffect(() => {
-    setWallet(getStoredWallet());
+    captureTelegramIdFromUrl();
+    const linked = getStoredWallet() || player?.walletAddress || null;
+    setWallet(linked);
     setReady(true);
 
     function refresh() {
-      setWallet(getStoredWallet());
+      setWallet(getStoredWallet() || player?.walletAddress || null);
     }
     window.addEventListener('focus', refresh);
     return () => window.removeEventListener('focus', refresh);
-  }, []);
+  }, [player?.walletAddress]);
 
   useEffect(() => {
     if (phase !== 'submitting' && phase !== 'printing') return;
@@ -73,7 +76,7 @@ export default function ReceiptPage() {
     setPhase('printing');
     setProgressIdx(0);
 
-    const telegramId = getTelegramId();
+    const telegramId = player?.telegramId ?? getTelegramId();
 
     try {
       const res = await fetch('/api/receipt', {
@@ -141,9 +144,23 @@ export default function ReceiptPage() {
           {!ready ? null : !wallet ? (
             <div className="space-y-4">
               <p className="font-term text-[16px] text-amber">
-                Connect Phantom to print your receipt.
+                {inTelegram
+                  ? 'Connect Phantom in your phone browser to print your receipt.'
+                  : 'Connect Phantom to print your receipt.'}
               </p>
-              <ConnectButton cluster={cluster} label="Connect Wallet" />
+              <ConnectButton cluster={cluster} label="Connect Wallet" returnPath="/receipt" />
+              {inTelegram ? (
+                <button
+                  type="button"
+                  className="chip-btn-cyan"
+                  onClick={() => {
+                    captureTelegramIdFromUrl();
+                    setWallet(getStoredWallet() || player?.walletAddress || null);
+                  }}
+                >
+                  I connected — refresh
+                </button>
+              ) : null}
             </div>
           ) : (
             <p className="font-term text-[14px] uppercase tracking-[0.2em] text-phosphor">

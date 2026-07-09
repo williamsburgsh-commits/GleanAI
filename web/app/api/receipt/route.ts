@@ -211,8 +211,19 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error('[api/receipt] POST error', err);
+    const message =
+      err instanceof Error ? err.message : 'Could not print your receipt.';
+    const isMissingTable =
+      typeof message === 'string' &&
+      /wallet_receipts|relation.*does not exist/i.test(message);
     return NextResponse.json(
-      { error: 'Could not print your receipt. Try again.' },
+      {
+        error: isMissingTable
+          ? 'Receipt database not ready. Run migration 0005_wallet_receipts.sql in Supabase.'
+          : message.includes('fetch') || message.includes('429')
+            ? 'On-chain scan timed out. Try again in a moment.'
+            : 'Could not print your receipt. Try again.',
+      },
       { status: 502 }
     );
   }

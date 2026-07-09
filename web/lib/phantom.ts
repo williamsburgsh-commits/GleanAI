@@ -16,6 +16,7 @@ const STORAGE_KEY_SECRET = 'glean.dapp_secret_key';
 const STORAGE_KEY_SESSION = 'glean.phantom_session';
 const STORAGE_KEY_WALLET = 'glean.wallet';
 const STORAGE_KEY_TG = 'glean.telegram_id';
+const STORAGE_KEY_RETURN = 'glean.connect_return';
 
 export type PhantomCluster = 'mainnet-beta' | 'devnet' | 'testnet';
 
@@ -55,6 +56,12 @@ export function getPhantomProvider(): PhantomProvider | null {
 export function isMobileDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+/** True when running inside Telegram's Mini App webview. */
+export function isTelegramMiniApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  return Boolean(window.Telegram?.WebApp?.initData);
 }
 
 export async function connectViaExtension(): Promise<ConnectResult> {
@@ -146,6 +153,17 @@ export function decodeConnectRedirect(search: URLSearchParams): ConnectResult {
 }
 
 // --- small local-storage helpers -------------------------------------------
+export function rememberConnectReturn(path: string) {
+  assertBrowser();
+  const safe = path.startsWith('/') ? path : '/play';
+  window.sessionStorage.setItem(STORAGE_KEY_RETURN, safe);
+}
+export function consumeConnectReturn(): string {
+  if (typeof window === 'undefined') return '/play';
+  const path = window.sessionStorage.getItem(STORAGE_KEY_RETURN);
+  window.sessionStorage.removeItem(STORAGE_KEY_RETURN);
+  return path && path.startsWith('/') ? path : '/play';
+}
 export function rememberTelegramId(id: string) {
   assertBrowser();
   window.localStorage.setItem(STORAGE_KEY_TG, id);

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CrtPanel } from '@/components/CrtPanel';
 import {
   decodeConnectRedirect,
+  consumeConnectReturn,
   linkWalletToServer,
   rememberConnection,
 } from '@/lib/phantom';
@@ -40,7 +41,8 @@ export default function ConnectCallback() {
 
         if (cancelled) return;
         setStatus('done');
-        setTimeout(() => router.replace('/play'), 1200);
+        const dest = consumeConnectReturn();
+        setTimeout(() => router.replace(dest), 1200);
       } catch (err) {
         if (cancelled) return;
         setStatus('error');
