@@ -57,6 +57,13 @@ interface BattlePayload {
   winStreak?: number;
   taunt?: string | null;
   opponentTaunt?: string | null;
+  battleMode?: 'normal' | 'boss';
+  bossSlug?: string;
+  bossName?: string;
+  bossTitle?: string;
+  bossIntroLine?: string;
+  bossTier?: string;
+  becameChampion?: boolean;
 }
 
 function snapshotToCard(s: BattlePayload['challenger']): FighterCardData {
@@ -157,6 +164,16 @@ function BattleInner() {
 
   const challenger = snapshotToCard(payload.challenger);
   const opponent = snapshotToCard(payload.opponent);
+  const isBossBattle = payload.battleMode === 'boss';
+  const bossMeta =
+    isBossBattle && payload.bossName
+      ? {
+          name: payload.bossName,
+          title: payload.bossTitle ?? 'Boss',
+          introLine: payload.bossIntroLine ?? 'Prepare yourself.',
+          tier: payload.bossTier ?? 'epic',
+        }
+      : null;
 
   if (done) {
     const shareText = buildRecapShareText(
@@ -178,16 +195,34 @@ function BattleInner() {
         <p className="font-pixel text-phosphor">
           {payload.isTie ? 'DRAW' : payload.challengerWon ? 'YOU WIN' : 'YOU LOSE'}
         </p>
+        {isBossBattle && payload.challengerWon && payload.bossSlug === 'toly' && (
+          <p className="mt-2 font-pixel text-[10px] text-amber glow-amber">
+            GAUNTLET CHAMPION — YOU DEFEATED TOLY
+          </p>
+        )}
+        {isBossBattle && payload.challengerWon && payload.becameChampion && payload.bossSlug !== 'toly' && (
+          <p className="mt-2 font-term text-sm text-phosphor">Boss defeated. Next challenger awaits.</p>
+        )}
         <p className="mt-2 font-term text-amber">+{payload.pointsAwarded} points</p>
         <div className="mt-6 flex flex-col items-center gap-3">
           <ShareButton
             url={resultUrl}
-            text="I just fought in Wallet Wars on GleanAI!"
+            text={
+              isBossBattle
+                ? `I just battled ${payload.bossName ?? 'a boss'} in Boss Gauntlet on GleanAI!`
+                : 'I just fought in Wallet Wars on GleanAI!'
+            }
             twitterText={shareText}
           />
-          <Link href="/wallet-wars" className="arcade-btn">
-            AGAIN
-          </Link>
+          {isBossBattle ? (
+            <Link href="/wallet-wars/boss-gauntlet" className="arcade-btn">
+              {payload.becameChampion ? 'GAUNTLET HALL' : 'NEXT BOSS'}
+            </Link>
+          ) : (
+            <Link href="/wallet-wars" className="arcade-btn">
+              AGAIN
+            </Link>
+          )}
         </div>
       </main>
     );
@@ -217,6 +252,8 @@ function BattleInner() {
           taunt={payload.taunt}
           opponentTaunt={payload.opponentTaunt}
           battleId={payload.battleId}
+          battleMode={isBossBattle ? 'boss' : 'normal'}
+          bossMeta={bossMeta}
           onDone={() => setDone(true)}
         />
       </main>

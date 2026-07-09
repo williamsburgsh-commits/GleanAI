@@ -22,6 +22,7 @@ interface BattleCardProps {
   decidingStat?: boolean;
   winnerZoom?: boolean;
   loserSlam?: boolean;
+  bossGlow?: boolean;
 }
 
 export function BattleCard({
@@ -40,6 +41,7 @@ export function BattleCard({
   decidingStat,
   winnerZoom,
   loserSlam,
+  bossGlow = false,
 }: BattleCardProps) {
   const showFront = face === 'front' || face === 'flipping';
 
@@ -47,7 +49,7 @@ export function BattleCard({
     <div
       className={`battle-card-3d ${slideClass} ${face === 'flipping' ? 'battle-card-flipping' : ''} ${
         winnerZoom ? 'battle-winner-zoom' : ''
-      } ${loserSlam ? 'battle-loser-slam' : ''}`}
+      } ${loserSlam ? 'battle-loser-slam' : ''} ${bossGlow ? 'boss-card-glow' : ''}`}
     >
       <div className="battle-card-3d-inner">
         <div className="battle-card-face battle-card-back">

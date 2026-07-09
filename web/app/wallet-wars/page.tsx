@@ -35,6 +35,12 @@ export default function WalletWarsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [selectedTaunt, setSelectedTaunt] = useState(TAUNT_PRESETS[0]);
   const [completedQuests, setCompletedQuests] = useState<Set<string>>(new Set());
+  const [gauntletProgress, setGauntletProgress] = useState<{
+    defeatedCount: number;
+    totalBosses: number;
+    status: string;
+    nextBossSlug: string | null;
+  } | null>(null);
 
   const loadFighter = useCallback(async (tg: string) => {
     const res = await fetch(`/api/fighter?telegramId=${tg}`);
@@ -67,6 +73,18 @@ export default function WalletWarsPage() {
     setHistory(data.battles ?? []);
   }, []);
 
+  const loadGauntlet = useCallback(async (tg: string) => {
+    const res = await fetch(`/api/boss-gauntlet?telegramId=${tg}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setGauntletProgress({
+      defeatedCount: data.defeatedCount,
+      totalBosses: data.totalBosses,
+      status: data.status,
+      nextBossSlug: data.nextBossSlug,
+    });
+  }, []);
+
   useEffect(() => {
     if (tgLoading) return;
     const tg = player?.telegramId ?? getTelegramId();
@@ -75,8 +93,9 @@ export default function WalletWarsPage() {
       loadFighter(tg).catch((e) => setError(e.message));
       loadQuests(tg);
       loadHistory(tg);
+      loadGauntlet(tg);
     }
-  }, [tgLoading, player?.telegramId, loadFighter, loadQuests, loadHistory]);
+  }, [tgLoading, player?.telegramId, loadFighter, loadQuests, loadHistory, loadGauntlet]);
 
   const scan = async () => {
     if (!telegramId) return;
@@ -239,6 +258,23 @@ export default function WalletWarsPage() {
                 MINT BADGE
               </Link>
             </div>
+          </CrtPanel>
+
+          <CrtPanel label="BOSS GAUNTLET" tone="magenta" className="mb-4">
+            <p className="mb-2 font-term text-sm">
+              {gauntletProgress?.status === 'champion'
+                ? 'You cleared all 7 bosses — including Toly.'
+                : 'Sequential boss ladder: Ansem, Toly, and five more legends.'}
+            </p>
+            {gauntletProgress && (
+              <p className="mb-3 font-pixel text-[10px] text-magenta">
+                {gauntletProgress.defeatedCount} / {gauntletProgress.totalBosses} DEFEATED
+                {gauntletProgress.nextBossSlug ? ` · NEXT: ${gauntletProgress.nextBossSlug}` : ''}
+              </p>
+            )}
+            <Link href="/wallet-wars/boss-gauntlet" className="arcade-btn-cyan inline-block text-[10px]">
+              ENTER GAUNTLET
+            </Link>
           </CrtPanel>
 
           <CrtPanel label="BATTLE" tone="phosphor" className="mb-4">

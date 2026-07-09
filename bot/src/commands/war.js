@@ -1,6 +1,6 @@
 import { supabase } from '../supabase.js';
 import { unwrap } from '../lib/errors.js';
-import { buildMiniAppUrl } from '../lib/links.js';
+import { buildWebLink, buildMiniAppPath } from '../lib/links.js';
 
 export async function warCommand(ctx) {
   const telegramId = ctx.from?.id;
@@ -46,7 +46,10 @@ export async function warCommand(ctx) {
   );
   await ctx.reply('🎮 Wallet Wars', {
     reply_markup: {
-      inline_keyboard: [[{ text: '⚔️ Open Wallet Wars', web_app: { url } }]],
+      inline_keyboard: [
+        [{ text: '⚔️ Open Wallet Wars', web_app: { url } }],
+        [{ text: '👹 Boss Gauntlet', web_app: { url: buildMiniAppPath('wallet-wars/boss-gauntlet') } }],
+      ],
     },
   });
 }

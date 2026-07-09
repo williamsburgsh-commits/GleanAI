@@ -17,7 +17,7 @@ export function GameModeCards({ className = '' }: { className?: string }) {
               <div>
                 <div className="font-pixel text-[11px] text-phosphor glow-text">WALLET WARS</div>
                 <div className="mt-1 font-term text-[15px] text-ash">
-                  Scan your fighter · battle · mint badge
+                  Scan your fighter · battle · boss gauntlet · mint badge
                 </div>
               </div>
             </div>

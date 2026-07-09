@@ -4,6 +4,7 @@ import { CLASH_PAUSE_MS, DECIDING_SLOW_MULTIPLIER, STAT_KEYS } from './fighterSt
 
 export type CinemaPhase =
   | 'idle'
+  | 'bossIntro'
   | 'entrance'
   | 'flip'
   | 'scan'
@@ -16,6 +17,7 @@ export type CinemaPhase =
   | 'done';
 
 export const CINEMA_TIMING = {
+  bossIntroMs: 3200,
   entranceMs: 2000,
   flipMs: 600,
   scanMs: 3000,

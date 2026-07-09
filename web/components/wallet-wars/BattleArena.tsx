@@ -9,6 +9,7 @@ import { CardScoreBadge } from './battle/ScoreTicker';
 import { Confetti } from './battle/Confetti';
 import { BattleRecapCard } from './battle/BattleRecapCard';
 import { TauntBanner } from './battle/TauntBanner';
+import { BossEntrance, type BossMeta } from './battle/BossEntrance';
 import { RankUpCutscene } from './battle/RankUpCutscene';
 import { useBattleSound } from './SoundToggle';
 import type { FighterCardData } from './FighterCard';
@@ -38,6 +39,8 @@ interface BattleArenaProps {
   winStreak?: number;
   taunt?: string | null;
   opponentTaunt?: string | null;
+  battleMode?: 'normal' | 'boss';
+  bossMeta?: BossMeta | null;
   onDone: () => void;
 }
 
@@ -53,6 +56,8 @@ export function BattleArena({
   winStreak = 0,
   taunt,
   opponentTaunt,
+  battleMode = 'normal',
+  bossMeta,
   onDone,
 }: BattleArenaProps) {
   const sound = useBattleSound();
@@ -75,6 +80,9 @@ export function BattleArena({
   const [leftFace, setLeftFace] = useState<'back' | 'flipping' | 'front'>('back');
   const [rightFace, setRightFace] = useState<'back' | 'flipping' | 'front'>('back');
   const [entranceDone, setEntranceDone] = useState(false);
+  const [bossIntroComplete, setBossIntroComplete] = useState(battleMode !== 'boss');
+
+  const isBossBattle = battleMode === 'boss' && Boolean(bossMeta);
 
   const cancelledRef = useRef(false);
   const onDoneRef = useRef(onDone);
@@ -87,6 +95,7 @@ export function BattleArena({
 
   const skip = useCallback(() => {
     cancelledRef.current = true;
+    setBossIntroComplete(true);
     setPhase('recap');
     setLeftFace('front');
     setRightFace('front');
@@ -98,6 +107,7 @@ export function BattleArena({
   }, [pointsAwarded]);
 
   useEffect(() => {
+    if (!bossIntroComplete) return;
     cancelledRef.current = false;
     void soundRef.current.resume();
 
@@ -247,7 +257,7 @@ export function BattleArena({
     return () => {
       cancelledRef.current = true;
     };
-  }, [resolution, challengerWon, isTie, pointsAwarded, challenger, opponent, rankUp]);
+  }, [resolution, challengerWon, isTie, pointsAwarded, challenger, opponent, rankUp, bossIntroComplete]);
 
   const highlights =
     phase === 'clash' || phase === 'deciding'
@@ -284,13 +294,27 @@ export function BattleArena({
       />
 
       <div className="mb-2 flex items-center justify-between">
-        <p className="font-pixel text-[9px] text-magenta">WALLET WARS // BATTLE</p>
+        <p className="font-pixel text-[9px] text-magenta">
+          {isBossBattle ? 'BOSS GAUNTLET // BATTLE' : 'WALLET WARS // BATTLE'}
+        </p>
         <button type="button" className="chip-btn text-[10px]" onClick={skip}>
           SKIP
         </button>
       </div>
 
       <TauntBanner text={opponentTaunt ?? taunt} />
+
+      {isBossBattle && bossMeta && !bossIntroComplete && (
+        <BossEntrance
+          active
+          boss={bossMeta}
+          opponent={opponent}
+          onComplete={() => {
+            setBossIntroComplete(true);
+            setPhase('bossIntro');
+          }}
+        />
+      )}
 
       {showCritical && (
         <p className="pointer-events-none absolute inset-x-0 top-20 z-50 text-center font-pixel text-sm text-amber animate-blink">
@@ -329,6 +353,7 @@ export function BattleArena({
             shattered={opponentShattered}
             cracked={opponentWorried}
             worried={opponentWorried}
+            bossGlow={isBossBattle}
             revealedStats={revealedStats}
             displayStats={displayStats}
             activeStat={activeStat}
@@ -386,9 +411,15 @@ export function BattleArena({
           />
           {!challengerWon && !isTie && (
             <div className="flex justify-center gap-2">
-              <Link href="/wallet-wars" className="chip-btn-amber battle-rematch-pulse">
-                REMATCH?
-              </Link>
+              {isBossBattle ? (
+                <Link href="/wallet-wars/boss-gauntlet" className="chip-btn-amber battle-rematch-pulse">
+                  RETRY BOSS?
+                </Link>
+              ) : (
+                <Link href="/wallet-wars" className="chip-btn-amber battle-rematch-pulse">
+                  REMATCH?
+                </Link>
+              )}
             </div>
           )}
           <div className="flex justify-center">

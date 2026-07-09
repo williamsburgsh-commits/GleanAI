@@ -35,7 +35,7 @@ export interface BattleRow {
   id: string;
   challenger_id: string;
   opponent_id: string | null;
-  opponent_type: 'bot' | 'user';
+  opponent_type: 'bot' | 'user' | 'boss';
   bot_seed: string | null;
   bot_name: string | null;
   winner_id: string | null;
