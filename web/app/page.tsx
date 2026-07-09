@@ -19,6 +19,7 @@ const QUEST_TICKER = [
   'SCAN YOUR FIGHTER +75',
   'WIN THREE BATTLES +50',
   'RUN THE SOLANA SPRINT +100',
+  'PRINT YOUR RECEIPT +50',
   'BRING A FRIEND +100',
 ];
 
@@ -52,16 +53,15 @@ export default function Home() {
           <span className="h-4 w-4">
             <PixelCoinSlot />
           </span>
-          <span className="coin-blink">insert wallet to start</span>
+          <span className="coin-blink">insert wallet to play</span>
         </p>
-        <h1 className="font-pixel text-2xl leading-[1.7] text-bone sm:text-4xl sm:leading-[1.5]">
-          <span className="glow-text text-phosphor">WALLET</span>
-          <br />
-          <span className="text-magenta">WARS</span>
+        <h1 className="font-pixel text-3xl leading-[1.5] text-bone sm:text-5xl sm:leading-[1.4]">
+          <span className="glow-text text-phosphor">GLEAN</span>
+          <span className="text-magenta">AI</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-md font-term text-[18px] leading-snug text-ash">
-          Your on-chain history becomes your fighter. Complete real Solana quests,
-          battle opponents, and climb the leaderboard.
+        <p className="mx-auto mt-5 max-w-lg font-term text-[18px] leading-snug text-ash">
+          The Solana onboarding arcade. Connect your wallet, complete real on-chain
+          quests, and battle your way up the leaderboard.
         </p>
 
         <HomeHeroCta cluster={cluster} />

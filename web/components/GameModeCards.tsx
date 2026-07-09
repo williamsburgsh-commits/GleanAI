@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { PixelArrowRight, PixelBolt } from '@/components/PixelArt';
+import { PixelArrowRight, PixelBolt, PixelCoinSlot } from '@/components/PixelArt';
 
 export function GameModeCards({ className = '' }: { className?: string }) {
   return (
@@ -22,6 +22,30 @@ export function GameModeCards({ className = '' }: { className?: string }) {
               </div>
             </div>
             <span className="h-5 w-5 text-phosphor glow-text">
+              <PixelArrowRight />
+            </span>
+          </div>
+        </div>
+      </Link>
+
+      <Link href="/receipt" className="block">
+        <div
+          className="crt-panel scanlines p-4 transition-transform active:scale-[0.98]"
+          style={{ borderColor: '#ffb34755' }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 text-amber">
+                <PixelCoinSlot />
+              </div>
+              <div>
+                <div className="font-pixel text-[11px] text-amber glow-amber">THE RECEIPT</div>
+                <div className="mt-1 font-term text-[15px] text-ash">
+                  Lifetime fees · Solana vs Ethereum · shareable flex
+                </div>
+              </div>
+            </div>
+            <span className="h-5 w-5 text-amber">
               <PixelArrowRight />
             </span>
           </div>

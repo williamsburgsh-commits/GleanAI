@@ -22,7 +22,7 @@ export function HomeHeroCta({ cluster }: { cluster: PhantomCluster }) {
           <span className="h-3 w-3 text-phosphor">
             <PixelArrowRight />
           </span>
-          Continue
+          Enter arcade
         </Link>
       ) : (
         <ConnectButton cluster={cluster} />

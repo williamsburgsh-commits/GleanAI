@@ -56,7 +56,11 @@ values
 
   ('join-community', 'Join the Community',
    'Join the GleanAI Telegram community to stay in the loop.',
-   50, 'manual', 10)
+   50, 'manual', 10),
+
+  ('print-receipt', 'Print Your Receipt',
+   'Generate your lifetime Solana fee receipt and compare fees vs Ethereum.',
+   50, 'manual', 11)
 on conflict (slug) do update set
   title = excluded.title,
   description = excluded.description,

@@ -4,9 +4,9 @@ import './globals.css';
 import { TelegramProvider } from '@/components/TelegramProvider';
 
 export const metadata: Metadata = {
-  title: 'GleanAI // Solana Sprint',
+  title: 'GleanAI // Onboarding Arcade',
   description:
-    'Speedrun your Solana onboarding. Complete quests, earn points, climb the leaderboard.',
+    'The Solana onboarding arcade. Connect your wallet, complete real on-chain quests, and battle your way up the leaderboard.',
 };
 
 export const viewport: Viewport = {
