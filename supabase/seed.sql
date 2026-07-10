@@ -60,7 +60,11 @@ values
 
   ('print-receipt', 'Print Your Receipt',
    'Generate your lifetime Solana fee receipt and compare fees vs Ethereum.',
-   50, 'manual', 11)
+   50, 'manual', 11),
+
+  ('complete-ghost-race', 'Finish Ghost Race',
+   'Send a real Solana memo transaction and beat the ETH/BTC ghosts.',
+   100, 'manual', 12)
 on conflict (slug) do update set
   title = excluded.title,
   description = excluded.description,

@@ -370,6 +370,10 @@ export default function MiniApp() {
                       <Link href="/receipt" className="chip-btn-cyan">
                         print
                       </Link>
+                    ) : q.slug === 'complete-ghost-race' ? (
+                      <Link href="/ghost-race" className="chip-btn-cyan">
+                        race
+                      </Link>
                     ) : q.autoVerifiable ? (
                       <button
                         onClick={() => onVerify(q.slug)}

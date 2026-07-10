@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { PixelArrowRight, PixelBolt, PixelCoinSlot } from '@/components/PixelArt';
+import { PixelArrowRight, PixelBolt, PixelCoinSlot, PixelGhost } from '@/components/PixelArt';
 
 export function GameModeCards({ className = '' }: { className?: string }) {
   return (
@@ -22,6 +22,30 @@ export function GameModeCards({ className = '' }: { className?: string }) {
               </div>
             </div>
             <span className="h-5 w-5 text-phosphor glow-text">
+              <PixelArrowRight />
+            </span>
+          </div>
+        </div>
+      </Link>
+
+      <Link href="/ghost-race" className="block">
+        <div
+          className="crt-panel scanlines p-4 transition-transform active:scale-[0.98]"
+          style={{ borderColor: '#2bd9ff55' }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 text-cyan">
+                <PixelGhost />
+              </div>
+              <div>
+                <div className="font-pixel text-[11px] text-cyan glow-text">GHOST RACE</div>
+                <div className="mt-1 font-term text-[15px] text-ash">
+                  Real Solana tx vs ETH/BTC ghosts · shareable proof
+                </div>
+              </div>
+            </div>
+            <span className="h-5 w-5 text-cyan">
               <PixelArrowRight />
             </span>
           </div>

@@ -45,6 +45,7 @@ import { ShareButton } from '@/components/ShareButton';
 import { CrtPanel } from '@/components/CrtPanel';
 import { PixelArrowLeft } from '@/components/PixelArt';
 import { buildRecapShareText } from '@/lib/wallet-wars/buildRecapShareText';
+import { bossChallengeBlinkUrl } from '@/lib/actions/blinkUrl';
 import { getPublicWebAppUrl } from '@/lib/publicWebAppUrl';
 
 interface BattlePayload {
@@ -194,6 +195,9 @@ function BattleInner() {
       challengerWins: payload.resolution.challengerWins,
       opponentWins: payload.resolution.opponentWins,
       resultUrl,
+      blinkUrl: isBossBattle
+        ? bossChallengeBlinkUrl(payload.bossSlug || 'gatekeeper')
+        : undefined,
     });
     const shareBlurb = isBossBattle
       ? `I just fought ${payload.bossName ?? 'a boss'} in Boss Gauntlet on GleanAI.`

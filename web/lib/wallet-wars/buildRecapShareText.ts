@@ -8,6 +8,8 @@ export function buildRecapShareText(opts: {
   challengerWins: number;
   opponentWins: number;
   resultUrl: string;
+  /** dial.to Boss Challenge Blink */
+  blinkUrl?: string;
 }): string {
   const score = `${opts.challengerWins}–${opts.opponentWins}`;
   const outcome = opts.isTie ? 'Drew' : opts.challengerWon ? 'Won' : 'Lost';
@@ -15,11 +17,15 @@ export function buildRecapShareText(opts: {
 
   if (opts.mode === 'boss') {
     const name = opts.bossName?.trim() || 'a boss';
-    return [
+    const lines = [
       `I just fought ${name} in Boss Gauntlet on GleanAI.`,
       `${outcome} ${score}. ${cta}`,
       opts.resultUrl,
-    ].join('\n');
+    ];
+    if (opts.blinkUrl) {
+      lines.push(`Challenge a boss: ${opts.blinkUrl}`);
+    }
+    return lines.join('\n');
   }
 
   const foe = opts.opponentName?.trim() || 'a rival';

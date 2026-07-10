@@ -5,6 +5,7 @@ import { CrtPanel } from '@/components/CrtPanel';
 import { ShareButton } from '@/components/ShareButton';
 import { getServiceClient } from '@/lib/supabaseServer';
 import { buildRecapShareText } from '@/lib/wallet-wars/buildRecapShareText';
+import { bossChallengeBlinkUrl } from '@/lib/actions/blinkUrl';
 import { getPublicWebAppUrl } from '@/lib/publicWebAppUrl';
 import { PixelTrophy } from '@/components/PixelArt';
 
@@ -150,6 +151,9 @@ export default async function BattleResultPage({
     challengerWins: c,
     opponentWins: o,
     resultUrl,
+    blinkUrl: isBoss
+      ? bossChallengeBlinkUrl(battle.boss_slug || 'gatekeeper')
+      : undefined,
   });
 
   return (
