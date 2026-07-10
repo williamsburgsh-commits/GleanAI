@@ -347,7 +347,7 @@ export function GleanWordmark({
 }) {
   return (
     <span
-      className={`relative isolate inline-block font-pixel leading-none ${WORDMARK_SIZE[size]} ${className}`}
+      className={`relative inline-block font-pixel leading-none ${WORDMARK_SIZE[size]} ${className}`}
     >
       <span className="relative z-0">
         <span className={glow ? 'text-phosphor glow-text' : 'text-phosphor'}>GLEAN</span>
@@ -355,11 +355,8 @@ export function GleanWordmark({
       </span>
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-10"
-        style={{
-          background:
-            'linear-gradient(to bottom, transparent calc(50% - 0.5px), rgba(255, 255, 255, 0.12) calc(50% - 0.5px), rgba(255, 255, 255, 0.12) calc(50% + 0.5px), transparent calc(50% + 0.5px))',
-        }}
+        className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-px -translate-y-1/2"
+        style={{ backgroundColor: C.scanline }}
       />
     </span>
   );
