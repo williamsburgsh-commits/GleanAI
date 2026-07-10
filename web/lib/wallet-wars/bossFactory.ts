@@ -1,7 +1,7 @@
 import { fetchWalletMetrics } from '@/lib/wallet-wars/metrics';
 import { metricsToBaseStats, totalScore, type BaseStats } from '@/lib/wallet-wars/fighterStats';
 import { scoreToRarity } from '@/lib/wallet-wars/rarity';
-import { fighterAvatarUrl, botAvatarUrl } from '@/lib/wallet-wars/avatar';
+import { bossAvatarUrl } from '@/lib/wallet-wars/bossAvatar';
 import { createBotFighter, type BotDifficulty } from '@/lib/wallet-wars/botFactory';
 import type { FighterSnapshot } from '@/lib/wallet-wars/battleResolver';
 import {
@@ -44,9 +44,7 @@ function definitionToSnapshot(boss: BossDefinition, stats: BaseStats): FighterSn
   return {
     name: boss.name,
     walletAddress: boss.walletAddress ?? undefined,
-    avatarUrl: boss.walletAddress
-      ? fighterAvatarUrl(boss.walletAddress)
-      : botAvatarUrl(`boss-${boss.slug}`),
+    avatarUrl: bossAvatarUrl(boss.slug),
     stats: merged,
     totalScore: total,
     rarity,
@@ -61,7 +59,7 @@ async function scanWalletBoss(boss: BossDefinition): Promise<FighterSnapshot> {
 
   const cached = snapshotCache.get(boss.slug);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-    return cached.snapshot;
+    return { ...cached.snapshot, avatarUrl: bossAvatarUrl(boss.slug) };
   }
 
   const metrics = await fetchWalletMetrics(boss.walletAddress);
@@ -81,7 +79,7 @@ function buildSyntheticGatekeeper(
   const total = totalScore(merged);
   return {
     name: boss.name,
-    avatarUrl: botAvatarUrl(`boss-${boss.slug}`),
+    avatarUrl: bossAvatarUrl(boss.slug),
     stats: merged,
     totalScore: total,
     rarity: boss.rarity,

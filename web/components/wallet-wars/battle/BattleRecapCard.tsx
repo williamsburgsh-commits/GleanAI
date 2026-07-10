@@ -15,6 +15,12 @@ interface BattleRecapCardProps {
   pointsAfter: number;
 }
 
+function RoundMark({ win, lose }: { win: boolean; lose: boolean }) {
+  if (win) return <span className="text-phosphor">✓</span>;
+  if (lose) return <span className="text-magenta">✗</span>;
+  return <span className="text-ash">—</span>;
+}
+
 export function BattleRecapCard({
   challenger,
   opponent,
@@ -33,49 +39,65 @@ export function BattleRecapCard({
 
   return (
     <div className="mx-auto max-w-md border-4 border-cyan/50 bg-[#0d1219] p-4 text-left">
-      <p className="mb-3 text-center font-pixel text-[9px] text-magenta">
+      <p className="mb-4 text-center font-pixel text-[9px] text-magenta">
         ⚔ WALLET WARS — BATTLE RECAP
       </p>
-      <div className="mb-4 flex items-center justify-between gap-2 font-pixel text-[8px] text-phosphor">
-        <span className="truncate">{challenger.name}</span>
-        <span className="text-ash">vs</span>
-        <span className="truncate text-magenta">{opponent.name}</span>
+
+      {/* Fighters: name + avatar stacked per column */}
+      <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+        <div className="flex flex-col items-center gap-2 min-w-0">
+          <p className="w-full truncate text-center font-pixel text-[8px] text-phosphor">
+            {challenger.name}
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={challenger.avatarUrl}
+            alt=""
+            className="h-14 w-14 shrink-0 border-2 border-bone/30 bg-void object-cover"
+            style={{ imageRendering: 'pixelated' }}
+          />
+        </div>
+        <span className="pb-5 font-pixel text-[8px] text-ash">vs</span>
+        <div className="flex flex-col items-center gap-2 min-w-0">
+          <p className="w-full truncate text-center font-pixel text-[8px] text-magenta">
+            {opponent.name}
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={opponent.avatarUrl}
+            alt=""
+            className="h-14 w-14 shrink-0 border-2 border-bone/30 bg-void object-cover"
+            style={{ imageRendering: 'pixelated' }}
+          />
+        </div>
       </div>
-      <div className="mb-4 flex justify-between gap-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={challenger.avatarUrl}
-          alt=""
-          className="h-14 w-14 border-2 border-bone/30 object-cover"
-          style={{ imageRendering: 'pixelated' }}
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={opponent.avatarUrl}
-          alt=""
-          className="h-14 w-14 border-2 border-bone/30 object-cover"
-          style={{ imageRendering: 'pixelated' }}
-        />
-      </div>
-      <ul className="space-y-1 font-term text-sm text-bone">
+
+      {/* Stats: fixed columns — label | mark | value | vs | mark | value */}
+      <ul className="space-y-1.5 font-term text-sm text-bone">
         {resolution.rounds.map((r) => {
           const label = STAT_LABELS[r.stat as StatKey];
           const cWin = r.winner === 'challenger';
           const oWin = r.winner === 'opponent';
           return (
-            <li key={r.stat} className="flex justify-between gap-2">
-              <span className="text-ash">{label}:</span>
-              <span>
-                {cWin ? '✅' : oWin ? '❌' : '—'} {r.challenger}
+            <li
+              key={r.stat}
+              className="grid grid-cols-[4.25rem_1rem_2.75rem_1.25rem_1rem_2.75rem] items-center justify-center gap-x-1"
+            >
+              <span className="text-ash">{label}</span>
+              <span className="text-center">
+                <RoundMark win={cWin} lose={oWin} />
               </span>
-              <span className="text-ash">vs</span>
-              <span>
-                {oWin ? '✅' : cWin ? '❌' : '—'} {r.opponent}
+              <span className="text-right tabular-nums">{r.challenger}</span>
+              <span className="text-center text-xs text-ash">vs</span>
+              <span className="text-center">
+                <RoundMark win={oWin} lose={cWin} />
               </span>
+              <span className="text-left tabular-nums">{r.opponent}</span>
             </li>
           );
         })}
       </ul>
+
       <p className="mt-4 text-center font-pixel text-[9px] text-phosphor">
         RESULT: {winnerName} {isTie ? '' : `WINS ${score}`} ⚔
       </p>
@@ -84,30 +106,9 @@ export function BattleRecapCard({
           RANK: {rankBefore.toUpperCase()} → {rankAfter.toUpperCase()}
         </p>
       )}
-      <p className="mt-3 text-center font-term text-xs text-cyan/80">glean-ai-web.vercel.app/wallet-wars</p>
+      <p className="mt-3 text-center font-term text-xs text-cyan/80">
+        glean-ai-web.vercel.app/wallet-wars
+      </p>
     </div>
   );
-}
-
-export function buildRecapShareText(
-  challenger: FighterCardData,
-  opponent: FighterCardData,
-  resolution: BattleResolution,
-  challengerWon: boolean,
-  isTie: boolean
-): string {
-  const winner = isTie ? 'DRAW' : challengerWon ? challenger.name : opponent.name;
-  const lines = resolution.rounds.map((r) => {
-    const label = STAT_LABELS[r.stat as StatKey];
-    const c = r.winner === 'challenger' ? '✅' : r.winner === 'opponent' ? '❌' : '—';
-    const o = r.winner === 'opponent' ? '✅' : r.winner === 'challenger' ? '❌' : '—';
-    return `${label}: ${c} ${r.challenger} vs ${o} ${r.opponent}`;
-  });
-  return [
-    '⚔️ WALLET WARS — BATTLE RECAP',
-    `${challenger.name} vs ${opponent.name}`,
-    ...lines,
-    `RESULT: ${winner} ${isTie ? '' : `${resolution.challengerWins}-${resolution.opponentWins}`}`,
-    'https://glean-ai-web.vercel.app/wallet-wars',
-  ].join('\n');
 }

@@ -19,6 +19,17 @@ interface BossEntranceProps {
 
 type IntroStep = 'vignette' | 'title' | 'reveal' | 'taunt' | 'accepted' | 'done';
 
+/** Per-character typewriter speed (ms) */
+const TYPE_MS = 42;
+/** Pause after the full line is typed so players can read it */
+const READ_HOLD_MS = 2000;
+/** Hold on CHALLENGE ACCEPTED before the fight starts */
+const ACCEPTED_HOLD_MS = 1800;
+
+const TITLE_AT = 700;
+const REVEAL_AT = 1800;
+const TAUNT_AT = 2800;
+
 export function BossEntrance({ active, boss, opponent, onComplete }: BossEntranceProps) {
   const [step, setStep] = useState<IntroStep>('vignette');
   const [typed, setTyped] = useState('');
@@ -30,18 +41,24 @@ export function BossEntrance({ active, boss, opponent, onComplete }: BossEntranc
       return;
     }
 
+    const typeDuration = Math.max(boss.introLine.length, 1) * TYPE_MS;
+    const acceptedAt = TAUNT_AT + typeDuration + READ_HOLD_MS;
+    const doneAt = acceptedAt + ACCEPTED_HOLD_MS;
+
     const timers: ReturnType<typeof setTimeout>[] = [];
-    timers.push(setTimeout(() => setStep('title'), 400));
-    timers.push(setTimeout(() => setStep('reveal'), 1100));
-    timers.push(setTimeout(() => setStep('taunt'), 1900));
-    timers.push(setTimeout(() => setStep('accepted'), 2800));
-    timers.push(setTimeout(() => {
-      setStep('done');
-      onComplete();
-    }, 3200));
+    timers.push(setTimeout(() => setStep('title'), TITLE_AT));
+    timers.push(setTimeout(() => setStep('reveal'), REVEAL_AT));
+    timers.push(setTimeout(() => setStep('taunt'), TAUNT_AT));
+    timers.push(setTimeout(() => setStep('accepted'), acceptedAt));
+    timers.push(
+      setTimeout(() => {
+        setStep('done');
+        onComplete();
+      }, doneAt)
+    );
 
     return () => timers.forEach(clearTimeout);
-  }, [active, onComplete]);
+  }, [active, boss.introLine, onComplete]);
 
   useEffect(() => {
     if (step !== 'taunt') return;
@@ -52,7 +69,7 @@ export function BossEntrance({ active, boss, opponent, onComplete }: BossEntranc
       i += 1;
       setTyped(line.slice(0, i));
       if (i >= line.length) clearInterval(id);
-    }, 28);
+    }, TYPE_MS);
     return () => clearInterval(id);
   }, [step, boss.introLine]);
 
@@ -69,7 +86,7 @@ export function BossEntrance({ active, boss, opponent, onComplete }: BossEntranc
 
       {(step === 'title' || step === 'reveal' || step === 'taunt' || step === 'accepted') && (
         <p className="boss-entrance-title relative z-10 font-pixel text-[11px] tracking-widest text-magenta glow-magenta">
-          BOSS GAUNTLET
+          BOSS GAUNTLET // BATTLE
         </p>
       )}
 
@@ -77,21 +94,24 @@ export function BossEntrance({ active, boss, opponent, onComplete }: BossEntranc
         <div className="boss-entrance-reveal relative z-10 mt-6 text-center">
           <p className="font-pixel text-lg text-amber glow-amber">{boss.name}</p>
           <p className="mt-1 font-term text-sm text-bone/80">{boss.title}</p>
-          <div className="boss-entrance-card mx-auto mt-4 h-24 w-20 overflow-hidden rounded border-2 border-magenta/60 bg-[#0d1219]">
+          <div className="boss-entrance-card mx-auto mt-4 h-28 w-28 overflow-hidden border-2 border-magenta/60 bg-[#0d1219]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={opponent.avatarUrl}
               alt=""
               className="h-full w-full object-cover"
+              style={{ imageRendering: 'pixelated' }}
             />
           </div>
         </div>
       )}
 
       {(step === 'taunt' || step === 'accepted') && (
-        <p className="relative z-10 mt-6 max-w-xs text-center font-term text-sm text-bone min-h-[2.5rem]">
+        <p className="relative z-10 mt-6 max-w-sm text-center font-term text-sm leading-relaxed text-bone min-h-[3rem]">
           &ldquo;{typed}&rdquo;
-          {step === 'taunt' && <span className="animate-blink">|</span>}
+          {step === 'taunt' && typed.length < boss.introLine.length && (
+            <span className="animate-blink">|</span>
+          )}
         </p>
       )}
 

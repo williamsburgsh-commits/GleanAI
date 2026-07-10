@@ -25,6 +25,8 @@ const SIZE = 800;
 const SCALE = SIZE / GRID;
 const FPS = 10;
 const FRAME_COUNT = 20;
+/** Coin seated in slot, cyan label lit — best static PFP frame */
+const PFP_FRAME = 12;
 
 const C = {
   void: '#06080d',
@@ -255,6 +257,14 @@ async function writeMp4(pngBuffers) {
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
+  const pfpOnly = process.argv.includes('--pfp-only');
+  if (pfpOnly) {
+    const pfpPath = path.join(OUT_DIR, 'gleanai-pfp.png');
+    await writeFile(pfpPath, rgbaToPng(renderFrame(PFP_FRAME)));
+    console.log(`✓ PNG  → ${pfpPath} (800×800 — X / Telegram static pfp)`);
+    return;
+  }
+
   const frames = [];
   const pngBuffers = [];
   for (let f = 0; f < FRAME_COUNT; f++) {
@@ -265,6 +275,10 @@ async function main() {
 
   await writeGif(frames);
   console.log(`✓ GIF  → ${path.join(OUT_DIR, 'gleanai-avatar.gif')}`);
+
+  const pfpPath = path.join(OUT_DIR, 'gleanai-pfp.png');
+  await writeFile(pfpPath, rgbaToPng(renderFrame(PFP_FRAME)));
+  console.log(`✓ PNG  → ${pfpPath} (X / Telegram static pfp)`);
 
   try {
     await writeMp4(pngBuffers);

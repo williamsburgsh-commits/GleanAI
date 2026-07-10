@@ -36,20 +36,23 @@ export function StatBar({
         ? 'bg-red-600 opacity-50 battle-stat-lose'
         : 'bg-cyan';
 
+  const textSize = animate ? 'text-[6px]' : 'text-[8px]';
+
   return (
     <div
-      className={`w-full transition-all duration-200 ${
+      className={`grid w-full grid-cols-[3.75rem_1fr_1.75rem] items-center gap-x-1.5 transition-all duration-200 ${
         active ? 'battle-stat-active' : ''
       } ${deciding ? 'battle-stat-deciding' : ''}`}
       data-stat={stat}
     >
-      <div className={`mb-0.5 flex items-center justify-between font-pixel uppercase tracking-wide text-bone/80 ${animate ? 'text-[6px]' : 'text-[8px]'}`}>
-        <span className={active ? 'text-phosphor animate-blink' : ''}>{STAT_LABELS[stat]}</span>
-        <span className={`${animate ? 'tabular-nums' : ''} ${!revealed ? 'opacity-30' : ''}`}>
-          {revealed ? shown : '—'}
-        </span>
-      </div>
-      <div className={`flex ${animate ? 'gap-[2px]' : 'gap-[3px]'}`}>
+      <span
+        className={`font-pixel uppercase tracking-wide text-bone/80 ${textSize} ${
+          active ? 'text-phosphor animate-blink' : ''
+        }`}
+      >
+        {STAT_LABELS[stat]}
+      </span>
+      <div className={`flex min-w-0 ${animate ? 'gap-[2px]' : 'gap-[3px]'}`}>
         {Array.from({ length: segments }).map((_, i) => (
           <div
             key={i}
@@ -60,6 +63,13 @@ export function StatBar({
           />
         ))}
       </div>
+      <span
+        className={`text-right font-pixel tabular-nums text-bone/80 ${textSize} ${
+          !revealed ? 'opacity-30' : ''
+        }`}
+      >
+        {revealed ? shown : '—'}
+      </span>
     </div>
   );
 }

@@ -17,7 +17,8 @@ export type CinemaPhase =
   | 'done';
 
 export const CINEMA_TIMING = {
-  bossIntroMs: 3200,
+  /** Approx. Gatekeeper line; BossEntrance schedules from intro length */
+  bossIntroMs: 9000,
   entranceMs: 2000,
   flipMs: 600,
   scanMs: 3000,

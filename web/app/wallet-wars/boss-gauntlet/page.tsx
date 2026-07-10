@@ -8,6 +8,7 @@ import { useTelegram } from '@/components/TelegramProvider';
 import { getTelegramId } from '@/lib/phantom';
 import { PixelArrowLeft, PixelBolt, PixelTrophy } from '@/components/PixelArt';
 import { rarityLabel, type FighterRarity } from '@/lib/wallet-wars/rarity';
+import { bossAvatarUrl } from '@/lib/wallet-wars/bossAvatar';
 
 interface BossLadderEntry {
   slug: string;
@@ -183,6 +184,23 @@ export default function BossGauntletPage() {
                 >
                   <span className="font-pixel text-[10px] text-ash w-6">{boss.order}</span>
                   <StatusIcon status={boss.status} />
+                  <div
+                    className={`h-10 w-10 shrink-0 overflow-hidden border bg-void ${
+                      boss.status === 'current'
+                        ? 'border-magenta/60'
+                        : boss.status === 'cleared'
+                          ? 'border-phosphor/40'
+                          : 'border-ash/30'
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={bossAvatarUrl(boss.slug)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-pixel text-[10px] text-bone truncate">{boss.name}</p>
                     <p className="font-term text-xs text-ash truncate">{boss.title}</p>

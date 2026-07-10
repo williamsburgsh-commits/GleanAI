@@ -41,9 +41,11 @@ function invertResolution(r: BattleResolution): BattleResolution {
 import { useTelegram } from '@/components/TelegramProvider';
 import { getTelegramId } from '@/lib/phantom';
 import { BattleSoundProvider, SoundToggle } from '@/components/wallet-wars/SoundToggle';
-import { buildRecapShareText } from '@/components/wallet-wars/battle/BattleRecapCard';
 import { ShareButton } from '@/components/ShareButton';
+import { CrtPanel } from '@/components/CrtPanel';
 import { PixelArrowLeft } from '@/components/PixelArt';
+import { buildRecapShareText } from '@/lib/wallet-wars/buildRecapShareText';
+import { getPublicWebAppUrl } from '@/lib/publicWebAppUrl';
 
 interface BattlePayload {
   battleId: string;
@@ -176,54 +178,78 @@ function BattleInner() {
       : null;
 
   if (done) {
-    const shareText = buildRecapShareText(
-      challenger,
-      opponent,
-      payload.resolution,
-      payload.challengerWon,
-      payload.isTie ?? false
-    );
-    const resultUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/wallet-wars/result/${payload.battleId}`;
+    const isTie = payload.isTie ?? false;
+    const won = payload.challengerWon;
+    const tone = isTie ? 'amber' : won ? 'phosphor' : 'magenta';
+    const outcomeClass = isTie ? 'text-amber' : won ? 'text-phosphor' : 'text-magenta';
+    const outcomeLabel = isTie ? 'DRAW' : won ? 'YOU WIN' : 'YOU LOSE';
+    const score = `${payload.resolution.challengerWins}–${payload.resolution.opponentWins}`;
+    const resultUrl = `${getPublicWebAppUrl()}/wallet-wars/result/${payload.battleId}`;
+    const shareText = buildRecapShareText({
+      mode: isBossBattle ? 'boss' : 'pvp',
+      bossName: payload.bossName,
+      opponentName: opponent.name,
+      challengerWon: won,
+      isTie,
+      challengerWins: payload.resolution.challengerWins,
+      opponentWins: payload.resolution.opponentWins,
+      resultUrl,
+    });
+    const shareBlurb = isBossBattle
+      ? `I just fought ${payload.bossName ?? 'a boss'} in Boss Gauntlet on GleanAI.`
+      : 'I just fought in Wallet Wars on GleanAI.';
 
     return (
-      <main className="mx-auto max-w-2xl px-4 py-8 text-center">
-        <FighterCard
-          fighter={payload.isTie ? challenger : payload.challengerWon ? challenger : opponent}
-          variant="profile"
-          className="mx-auto mb-6 max-w-[240px]"
-        />
-        <p className="font-pixel text-phosphor">
-          {payload.isTie ? 'DRAW' : payload.challengerWon ? 'YOU WIN' : 'YOU LOSE'}
-        </p>
-        {isBossBattle && payload.challengerWon && payload.bossSlug === 'toly' && (
-          <p className="mt-2 font-pixel text-[10px] text-amber glow-amber">
-            GAUNTLET CHAMPION — YOU DEFEATED TOLY
-          </p>
-        )}
-        {isBossBattle && payload.challengerWon && payload.becameChampion && payload.bossSlug !== 'toly' && (
-          <p className="mt-2 font-term text-sm text-phosphor">Boss defeated. Next challenger awaits.</p>
-        )}
-        <p className="mt-2 font-term text-amber">+{payload.pointsAwarded} points</p>
-        <div className="mt-6 flex flex-col items-center gap-3">
-          <ShareButton
-            url={resultUrl}
-            text={
-              isBossBattle
-                ? `I just battled ${payload.bossName ?? 'a boss'} in Boss Gauntlet on GleanAI!`
-                : 'I just fought in Wallet Wars on GleanAI!'
-            }
-            twitterText={shareText}
-          />
-          {isBossBattle ? (
-            <Link href="/wallet-wars/boss-gauntlet" className="arcade-btn">
-              {payload.becameChampion ? 'GAUNTLET HALL' : 'NEXT BOSS'}
-            </Link>
-          ) : (
-            <Link href="/wallet-wars" className="arcade-btn">
-              AGAIN
-            </Link>
-          )}
-        </div>
+      <main className="mx-auto max-w-xl px-4 py-8">
+        <CrtPanel
+          label={isBossBattle ? 'BOSS GAUNTLET // RESULT' : 'WALLET WARS // RESULT'}
+          tone={tone}
+        >
+          <div className="text-center">
+            <FighterCard
+              fighter={isTie ? challenger : won ? challenger : opponent}
+              variant="profile"
+              className="mx-auto mb-4 max-w-[200px]"
+            />
+            <p className={`font-pixel text-lg ${outcomeClass}`}>{outcomeLabel}</p>
+            <p className={`mt-2 font-pixel text-sm ${outcomeClass}`}>{score}</p>
+            {isBossBattle && won && payload.bossSlug === 'toly' && (
+              <p className="mt-2 font-pixel text-[10px] text-amber glow-amber">
+                GAUNTLET CHAMPION — YOU DEFEATED TOLY
+              </p>
+            )}
+            {isBossBattle && won && payload.becameChampion && payload.bossSlug !== 'toly' && (
+              <p className="mt-2 font-term text-sm text-phosphor">
+                Boss defeated. Next challenger awaits.
+              </p>
+            )}
+            <p className="mt-2 font-term text-amber">+{payload.pointsAwarded} points</p>
+            <div className="mx-auto mt-6 flex w-full max-w-xs flex-col items-stretch gap-3">
+              <ShareButton
+                variant="compact"
+                url={resultUrl}
+                text={shareBlurb}
+                twitterText={shareText}
+              />
+              {isBossBattle ? (
+                <Link
+                  href="/wallet-wars/boss-gauntlet"
+                  className="chip-btn w-full text-center"
+                >
+                  {won
+                    ? payload.becameChampion
+                      ? 'GAUNTLET HALL'
+                      : 'NEXT BOSS'
+                    : 'BACK TO GAUNTLET'}
+                </Link>
+              ) : (
+                <Link href="/wallet-wars" className="chip-btn w-full text-center">
+                  AGAIN
+                </Link>
+              )}
+            </div>
+          </div>
+        </CrtPanel>
       </main>
     );
   }
