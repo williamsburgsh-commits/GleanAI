@@ -1,6 +1,6 @@
 'use client';
 
-import { GleanLogo, GleanWordmark } from '@/components/logo/GleanLogo';
+import { GleanWordmark } from '@/components/logo/GleanLogo';
 
 export function CardBack({ className = '' }: { className?: string }) {
   return (
@@ -15,9 +15,6 @@ export function CardBack({ className = '' }: { className?: string }) {
             'repeating-linear-gradient(45deg, #0d1219 0, #0d1219 4px, #111827 4px, #111827 8px)',
         }}
       />
-      <div className="relative z-10 mb-2 h-8 w-8 sm:h-10 sm:w-10">
-        <GleanLogo />
-      </div>
       <div className="relative z-10">
         <GleanWordmark size="sm" glow />
       </div>

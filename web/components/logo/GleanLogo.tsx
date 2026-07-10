@@ -326,13 +326,14 @@ function LogoReceiptG({
   );
 }
 
-export type GleanWordmarkSize = 'sm' | 'md' | 'lg' | 'xl';
+export type GleanWordmarkSize = 'sm' | 'md' | 'lg' | 'xl' | 'hero';
 
 const WORDMARK_SIZE: Record<GleanWordmarkSize, string> = {
   sm: 'text-[8px] sm:text-[10px]',
   md: 'text-[11px] sm:text-[13px]',
   lg: 'text-[14px] sm:text-[18px]',
   xl: 'text-xl sm:text-3xl',
+  hero: 'text-3xl sm:text-5xl',
 };
 
 export function GleanWordmark({
@@ -345,11 +346,16 @@ export function GleanWordmark({
   glow?: boolean;
 }) {
   return (
-    <span className={`font-pixel ${WORDMARK_SIZE[size]} ${className}`}>
-      <span className={glow ? 'text-phosphor glow-text' : 'text-phosphor'}>
-        GLEAN
-      </span>
+    <span
+      className={`relative inline-block font-pixel leading-none ${WORDMARK_SIZE[size]} ${className}`}
+    >
+      <span className={glow ? 'text-phosphor glow-text' : 'text-phosphor'}>GLEAN</span>
       <span className="text-magenta">AI</span>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2"
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
+      />
     </span>
   );
 }

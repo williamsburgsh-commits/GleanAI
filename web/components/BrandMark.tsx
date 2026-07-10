@@ -1,41 +1,21 @@
 import Link from 'next/link';
-import {
-  GleanLogo,
-  GleanWordmark,
-  type GleanWordmarkSize,
-} from '@/components/logo/GleanLogo';
+import { GleanWordmark, type GleanWordmarkSize } from '@/components/logo/GleanLogo';
 
 export function BrandMark({
   suffix,
   tagline,
   size = 'md',
   href = '/',
-  showIcon = true,
   className = '',
 }: {
   suffix?: string;
   tagline?: string;
   size?: GleanWordmarkSize;
   href?: string | null;
-  showIcon?: boolean;
   className?: string;
 }) {
-  const iconSize =
-    size === 'xl'
-      ? 'h-8 w-8'
-      : size === 'lg'
-        ? 'h-7 w-7'
-        : size === 'sm'
-          ? 'h-5 w-5'
-          : 'h-6 w-6';
-
   const inner = (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      {showIcon ? (
-        <div className={`shrink-0 ${iconSize}`} aria-hidden>
-          <GleanLogo />
-        </div>
-      ) : null}
       <div className="flex min-w-0 items-center gap-2">
         <GleanWordmark size={size} glow />
         {suffix ? (

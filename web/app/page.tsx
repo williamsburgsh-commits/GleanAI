@@ -1,5 +1,6 @@
 import { CrtPanel } from '@/components/CrtPanel';
 import { BrandMark } from '@/components/BrandMark';
+import { GleanWordmark } from '@/components/logo/GleanLogo';
 import { Ticker } from '@/components/Ticker';
 import { HomeHeroCta } from '@/components/HomeHeroCta';
 import { TelegramCapture } from '@/components/TelegramCapture';
@@ -49,9 +50,8 @@ export default function Home() {
           </span>
           <span className="coin-blink">insert wallet to play</span>
         </p>
-        <h1 className="font-pixel text-3xl leading-[1.5] text-bone sm:text-5xl sm:leading-[1.4]">
-          <span className="glow-text text-phosphor">GLEAN</span>
-          <span className="text-magenta">AI</span>
+        <h1 className="leading-[1.5] sm:leading-[1.4]">
+          <GleanWordmark size="hero" glow />
         </h1>
         <p className="mx-auto mt-5 max-w-lg font-term text-[18px] leading-snug text-ash">
           The Solana onboarding arcade. Real transactions. Real stakes. Real fun.
