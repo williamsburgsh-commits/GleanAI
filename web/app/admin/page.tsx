@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { CrtPanel } from '@/components/CrtPanel';
+import { BrandMark } from '@/components/BrandMark';
 import { RecipientPicker, type RecipientUser } from '@/components/admin/RecipientPicker';
 
 type Status = 'pending' | 'paid' | 'cancelled';
@@ -191,9 +192,7 @@ export default function AdminPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-6 sm:px-6">
       <header className="mb-6 flex items-center justify-between">
-        <span className="font-pixel text-[13px] text-phosphor">
-          GLEAN<span className="text-magenta">AI</span> · ADMIN
-        </span>
+        <BrandMark suffix="· ADMIN" href={null} />
         <button
           onClick={logout}
           className="crt-tag"

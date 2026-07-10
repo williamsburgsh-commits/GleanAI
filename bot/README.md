@@ -13,6 +13,20 @@ The bot launches the web app as a **Telegram Mini App** (`WEB_APP_URL/app`):
 Both require `WEB_APP_URL` to be **HTTPS** (ngrok/Vercel). On `localhost` the bot
 falls back to a normal link and skips the menu button.
 
+## Bot profile picture (animated)
+
+Telegram **does not** animate GIF profile pics — they become a static JPG. For an
+animated bot avatar, upload the MP4 (not the GIF):
+
+1. Generate assets (from repo root):
+   ```bash
+   npm run generate:avatar --workspace web
+   ```
+2. Open [@BotFather](https://t.me/BotFather) → your bot → **Edit Bot** → **Edit Botpic**
+3. Upload `web/public/brand/gleanai-avatar.mp4` (800×800, coin-drop loop)
+
+Preview the GIF at `/brand/gleanai-avatar.gif` when the web app is running.
+
 ## Setup
 
 `bot/.env` already has the Supabase URL + anon key. Before running live you must add:

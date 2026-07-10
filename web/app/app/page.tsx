@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
+import { BrandMark } from '@/components/BrandMark';
 import { GameModeCards } from '@/components/GameModeCards';
 import { useTelegram } from '@/components/TelegramProvider';
 import { getStoredWallet } from '@/lib/phantom';
@@ -199,9 +200,7 @@ export default function MiniApp() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-3 py-4">
       {/* Header */}
       <header className="flex items-center justify-between">
-        <span className="font-pixel text-[13px] text-phosphor">
-          GLEAN<span className="text-magenta">AI</span>
-        </span>
+        <BrandMark href="/app" />
         {wallet ? (
           <span className="crt-tag" style={{ borderColor: '#2bd9ff', color: '#2bd9ff' }}>
             {shorten(wallet)}

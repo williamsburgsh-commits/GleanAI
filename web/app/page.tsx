@@ -1,4 +1,5 @@
 import { CrtPanel } from '@/components/CrtPanel';
+import { BrandMark } from '@/components/BrandMark';
 import { Ticker } from '@/components/Ticker';
 import { HomeHeroCta } from '@/components/HomeHeroCta';
 import { TelegramCapture } from '@/components/TelegramCapture';
@@ -29,14 +30,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-6 sm:px-6">
       <header className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="font-pixel text-[13px] text-phosphor">
-            GLEAN<span className="text-magenta">AI</span>
-          </span>
-          <span className="hidden font-term text-[16px] uppercase tracking-[0.2em] text-ash sm:inline">
-            {'// onboarding arcade'}
-          </span>
-        </div>
+        <BrandMark tagline="// onboarding arcade" />
         <div className="flex items-center gap-2">
           <span
             className="crt-tag"
@@ -60,8 +54,7 @@ export default function Home() {
           <span className="text-magenta">AI</span>
         </h1>
         <p className="mx-auto mt-5 max-w-lg font-term text-[18px] leading-snug text-ash">
-          The Solana onboarding arcade. Connect your wallet, complete real on-chain
-          quests, and battle your way up the leaderboard.
+          The Solana onboarding arcade. Real transactions. Real stakes. Real fun.
         </p>
 
         <HomeHeroCta cluster={cluster} />

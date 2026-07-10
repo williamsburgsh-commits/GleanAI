@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
+import { BrandMark } from '@/components/BrandMark';
 import { GameModeCards } from '@/components/GameModeCards';
 import { useTelegram } from '@/components/TelegramProvider';
 import {
@@ -150,9 +151,7 @@ export default function Play() {
       </Link>
 
       <header className="mb-6 flex items-center justify-between">
-        <span className="font-pixel text-[13px] text-phosphor">
-          GLEAN<span className="text-magenta">AI</span>
-        </span>
+        <BrandMark href={homeHref} />
         {wallet ? (
           <button
             onClick={disconnect}

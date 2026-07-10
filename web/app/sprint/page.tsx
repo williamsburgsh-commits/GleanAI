@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { CrtPanel } from '@/components/CrtPanel';
+import { BrandMark } from '@/components/BrandMark';
 import { useTelegram } from '@/components/TelegramProvider';
 import { getTelegramId } from '@/lib/phantom';
 import { SPRINT_ACTIONS, TOTAL_ACTIONS } from '@/lib/sprintActions';
@@ -156,9 +157,7 @@ export default function SprintPage() {
           <span className="h-3 w-3"><PixelArrowLeft /></span>
           Menu
         </Link>
-        <span className="font-pixel text-[13px] text-phosphor">
-          GLEAN<span className="text-magenta">AI</span>
-        </span>
+        <BrandMark href={homeHref} />
         <span className="crt-tag" style={{ borderColor: '#ff3da6', color: '#ff3da6' }}>
           SPRINT
         </span>
