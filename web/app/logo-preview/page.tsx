@@ -27,7 +27,7 @@ export default function LogoPreviewPage() {
     <main className="mx-auto min-h-screen max-w-6xl px-4 py-8 sm:px-6">
       <header className="mb-10 text-center">
         <p className="mb-3 font-term text-[16px] uppercase tracking-[0.25em] text-ash">
-          // logo lab
+          {'// logo lab'}
         </p>
         <h1 className="font-pixel text-2xl leading-relaxed text-bone sm:text-4xl">
           Pick your <span className="text-phosphor">mark</span>
@@ -79,7 +79,7 @@ export default function LogoPreviewPage() {
                     <div className="flex flex-col gap-1">
                       <Wordmark size="lg" />
                       <span className="font-term text-[14px] text-ash">
-                        // onboarding arcade
+                        {'// onboarding arcade'}
                       </span>
                     </div>
                   </div>

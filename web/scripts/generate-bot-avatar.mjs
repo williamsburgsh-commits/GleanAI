@@ -9,13 +9,11 @@
 
 import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import gifenc from 'gifenc';
 import { PNG } from 'pngjs';
 
-const require = createRequire(import.meta.url);
 const { GIFEncoder, quantize, applyPalette } = gifenc;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -203,12 +201,6 @@ async function writeGif(frames) {
 }
 
 function findFfmpeg() {
-  try {
-    return require('@ffmpeg-installer/ffmpeg').path;
-  } catch {
-    // fall through
-  }
-
   const candidates = [
     process.env.FFMPEG_PATH,
     'ffmpeg',

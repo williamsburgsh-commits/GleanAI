@@ -23,7 +23,7 @@ export default function LogoFinalistsPage() {
           ← all 8 concepts
         </Link>
         <p className="mb-3 font-term text-[16px] uppercase tracking-[0.25em] text-ash">
-          // finalists
+          {'// finalists'}
         </p>
         <h1 className="font-pixel text-2xl leading-relaxed text-bone sm:text-4xl">
           <span className="text-phosphor">2</span>
