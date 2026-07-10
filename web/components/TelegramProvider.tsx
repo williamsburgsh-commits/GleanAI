@@ -96,11 +96,13 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Plain browser fallback: use ?tg= (legacy bot link) if present.
+      // Skip ?tg= on battle invites — that param is the creator's id, not the visitor's.
       const params = new URLSearchParams(window.location.search);
-      const tgParam = params.get('tg');
+      const isBattleInvite = Boolean(params.get('invite'));
+      const tgParam = isBattleInvite ? null : params.get('tg');
       const tg = tgParam && /^\d+$/.test(tgParam) ? tgParam : getTelegramId();
       if (tg) {
-        rememberTelegramId(tg);
+        if (tgParam) rememberTelegramId(tg);
         setPlayer({
           telegramId: tg,
           username: null,

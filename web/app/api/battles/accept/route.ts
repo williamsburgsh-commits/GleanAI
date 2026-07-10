@@ -74,7 +74,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invite already used.' }, { status: 409 });
     }
     if (invite.creator_id === acceptor.id) {
-      return NextResponse.json({ error: 'Cannot battle yourself.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            'Cannot battle yourself. Open this invite in Telegram as a different account (not the challenger).',
+        },
+        { status: 400 }
+      );
     }
 
     const dailyLimitError = await getBattleDailyLimitError(supabase, acceptor.id);

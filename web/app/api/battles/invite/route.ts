@@ -47,7 +47,9 @@ export async function POST(request: Request) {
       process.env.WEB_APP_URL?.replace(/\/$/, '') ||
       process.env.NEXT_PUBLIC_WEB_APP_URL?.replace(/\/$/, '') ||
       '';
-    const shareUrl = `${baseUrl}/wallet-wars/battle?invite=${data.code}&tg=${telegramId}`;
+    // Do not append &tg= — that is the creator's id. Friends who open the link
+    // would get it written into localStorage and then fail accept as "yourself".
+    const shareUrl = `${baseUrl}/wallet-wars/battle?invite=${data.code}`;
 
     return NextResponse.json({
       code: data.code,

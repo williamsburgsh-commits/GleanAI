@@ -96,7 +96,7 @@ function snapshotToCard(s: BattlePayload['challenger']): FighterCardData {
 
 function BattleInner() {
   const searchParams = useSearchParams();
-  const { inTelegram } = useTelegram();
+  const { inTelegram, player, loading: tgLoading } = useTelegram();
   const homeHref = '/wallet-wars';
   const invite = searchParams.get('invite');
   const battleIdParam = searchParams.get('id');
@@ -116,35 +116,37 @@ function BattleInner() {
       }
     }
 
-    if (invite) {
-      const tg = getTelegramId();
-      if (!tg) {
-        setError('Telegram session required to accept invite.');
-        return;
-      }
-      fetch('/api/battles/accept', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: tg, inviteCode: invite }),
-      })
-        .then(async (res) => {
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Accept failed');
-          const acceptorWon = Boolean(data.acceptorWon);
-          const normalized: BattlePayload = {
-            battleId: data.battleId,
-            challenger: data.opponent,
-            opponent: data.challenger,
-            resolution: invertResolution(data.resolution),
-            challengerWon: acceptorWon,
-            pointsAwarded: data.pointsAwarded,
-          };
-          sessionStorage.setItem('glean.battle_result', JSON.stringify(normalized));
-          setPayload(normalized);
-        })
-        .catch((e) => setError(e.message));
+    if (!invite) return;
+    // Wait for Mini App auth so we never accept as the creator's ?tg= from the URL.
+    if (tgLoading) return;
+
+    const tg = player?.telegramId ?? getTelegramId();
+    if (!tg) {
+      setError('Open this invite from Telegram (via the GleanAI bot) to accept.');
+      return;
     }
-  }, [invite, battleIdParam]);
+    fetch('/api/battles/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telegramId: tg, inviteCode: invite }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Accept failed');
+        const acceptorWon = Boolean(data.acceptorWon);
+        const normalized: BattlePayload = {
+          battleId: data.battleId,
+          challenger: data.opponent,
+          opponent: data.challenger,
+          resolution: invertResolution(data.resolution),
+          challengerWon: acceptorWon,
+          pointsAwarded: data.pointsAwarded,
+        };
+        sessionStorage.setItem('glean.battle_result', JSON.stringify(normalized));
+        setPayload(normalized);
+      })
+      .catch((e) => setError(e.message));
+  }, [invite, battleIdParam, tgLoading, player?.telegramId]);
 
   if (error) {
     return (

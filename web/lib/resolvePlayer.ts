@@ -3,7 +3,10 @@ import { getTelegramId, rememberTelegramId } from '@/lib/phantom';
 /** Read ?tg= from the URL and persist it for later pages (e.g. /play after wallet connect). */
 export function captureTelegramIdFromUrl(): string | null {
   if (typeof window === 'undefined') return null;
-  const param = new URLSearchParams(window.location.search).get('tg');
+  const params = new URLSearchParams(window.location.search);
+  // Battle invite URLs must not adopt the creator's ?tg= as the visitor's identity.
+  if (params.get('invite')) return null;
+  const param = params.get('tg');
   if (param && /^\d+$/.test(param)) {
     rememberTelegramId(param);
     return param;

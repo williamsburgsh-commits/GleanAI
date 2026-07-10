@@ -10,8 +10,11 @@ export function TelegramCapture() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // Invite links may carry the creator's ?tg= — never adopt that as our session.
+    const isBattleInvite = Boolean(params.get('invite'));
+    const inMiniApp = Boolean(window.Telegram?.WebApp?.initData);
     const param = params.get('tg');
-    if (param && /^\d+$/.test(param)) {
+    if (!isBattleInvite && !inMiniApp && param && /^\d+$/.test(param)) {
       rememberTelegramId(param);
       setTg(param);
     } else {
