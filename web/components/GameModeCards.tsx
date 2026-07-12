@@ -1,5 +1,11 @@
 import Link from 'next/link';
-import { PixelArrowRight, PixelBolt, PixelCoinSlot, PixelGhost } from '@/components/PixelArt';
+import {
+  PixelArrowRight,
+  PixelBolt,
+  PixelCoinSlot,
+  PixelGhost,
+  PixelSprint,
+} from '@/components/PixelArt';
 
 export function GameModeCards({ className = '' }: { className?: string }) {
   return (
@@ -79,7 +85,12 @@ export function GameModeCards({ className = '' }: { className?: string }) {
       <Link href="/sprint" className="block">
         <div className="crt-panel scanlines p-3 opacity-90" style={{ borderColor: '#ff3da633' }}>
           <div className="flex items-center justify-between">
-            <div className="font-term text-[14px] text-ash">Solana Sprint · side mode</div>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 text-magenta glow-magenta">
+                <PixelSprint />
+              </div>
+              <div className="font-term text-[14px] text-ash">Solana Sprint · side mode</div>
+            </div>
             <span className="h-4 w-4 text-magenta">
               <PixelArrowRight />
             </span>

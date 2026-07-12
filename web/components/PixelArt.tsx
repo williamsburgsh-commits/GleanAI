@@ -196,7 +196,29 @@ export function PixelLock({ className, style, title }: SpriteProps) {
   );
 }
 
-/* ── Power bolt (sprint / start) ── (6 x 9) */
+/* ── Stopwatch (Solana Sprint) ── (8 x 9) */
+export function PixelSprint({ className, style, title }: SpriteProps) {
+  return (
+    <Grid w={8} h={9}>
+      <title>{title ?? 'sprint'}</title>
+      {cells([[3, 0], [4, 0]], 'currentColor')}
+      {cells(
+        [
+          [3, 1], [4, 1],
+          [2, 2], [3, 2], [4, 2], [5, 2],
+          [2, 3], [3, 3], [4, 3], [5, 3],
+          [1, 4], [6, 4],
+          [1, 5], [6, 5],
+          [2, 6], [3, 6], [4, 6], [5, 6],
+        ],
+        'currentColor',
+      )}
+      {cells([[3, 4], [4, 4], [4, 5]], 'currentColor')}
+    </Grid>
+  );
+}
+
+/* ── Power bolt (battle / start) ── (6 x 9) */
 export function PixelBolt({ className, style, title }: SpriteProps) {
   return (
     <Grid w={6} h={9}>
