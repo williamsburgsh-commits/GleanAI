@@ -1,7 +1,7 @@
 // Minimal typings for the Telegram WebApp SDK (telegram-web-app.js).
 // Docs: https://core.telegram.org/bots/webapps
 
-interface TelegramWebAppUser {
+export interface TelegramWebAppUser {
   id: number;
   is_bot?: boolean;
   first_name: string;
@@ -10,7 +10,7 @@ interface TelegramWebAppUser {
   language_code?: string;
 }
 
-interface TelegramThemeParams {
+export interface TelegramThemeParams {
   bg_color?: string;
   text_color?: string;
   hint_color?: string;
@@ -20,13 +20,13 @@ interface TelegramThemeParams {
   secondary_bg_color?: string;
 }
 
-interface TelegramHapticFeedback {
+export interface TelegramHapticFeedback {
   impactOccurred(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
   notificationOccurred(type: 'error' | 'success' | 'warning'): void;
   selectionChanged(): void;
 }
 
-interface TelegramMainButton {
+export interface TelegramMainButton {
   text: string;
   isVisible: boolean;
   isActive: boolean;
@@ -41,7 +41,7 @@ interface TelegramMainButton {
   hideProgress(): void;
 }
 
-interface TelegramWebApp {
+export interface TelegramWebApp {
   initData: string;
   initDataUnsafe: {
     user?: TelegramWebAppUser;
@@ -69,6 +69,10 @@ interface TelegramWebApp {
   offEvent(eventType: string, eventHandler: () => void): void;
 }
 
-interface Window {
-  Telegram?: { WebApp?: TelegramWebApp };
+declare global {
+  interface Window {
+    Telegram?: { WebApp?: TelegramWebApp };
+  }
 }
+
+export {};

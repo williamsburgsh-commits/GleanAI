@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { rememberTelegramId, getTelegramId } from '@/lib/phantom';
+import type { TelegramWebApp } from '@/types/telegram';
 
 export interface Player {
   telegramId: string;
