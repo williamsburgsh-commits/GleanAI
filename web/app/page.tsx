@@ -57,7 +57,7 @@ export default function Home() {
           The Solana onboarding arcade. Real transactions. Real stakes. Real fun.
         </p>
 
-        <HomeHeroCta cluster={cluster} />
+        <HomeHeroCta />
       </section>
 
       <Ticker items={QUEST_TICKER} />

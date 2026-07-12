@@ -32,10 +32,6 @@ export interface FighterSnapshot {
   isBot?: boolean;
 }
 
-const BATTLE_TIE_POINTS = 10;
-
-export { BATTLE_TIE_POINTS };
-
 function critChance(agility: number): number {
   return Math.min(0.25, 0.05 + agility / 600);
 }
@@ -107,5 +103,6 @@ export function resolveBattle(
   return { rounds, challengerWins, opponentWins, winner, decidingStat };
 }
 
-export const BATTLE_WIN_POINTS = 25;
-export const BATTLE_LOSS_POINTS = 5;
+export const BATTLE_WIN_POINTS = 15;
+export const BATTLE_LOSS_POINTS = 0;
+export const BATTLE_TIE_POINTS = 5;

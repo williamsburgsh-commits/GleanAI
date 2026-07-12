@@ -69,6 +69,19 @@ export async function getCompletedQuestIds(
   return new Set((data ?? []).map((r) => r.quest_id as string));
 }
 
+export async function isTxSignatureClaimedGlobally(
+  supabase: Supa,
+  txSignature: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('quest_completions')
+    .select('id')
+    .eq('tx_signature', txSignature)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
 // Records a completion + awards points + writes a ledger row. Idempotent via
 // the quest_completions (user_id, quest_id) unique constraint.
 // Returns { awarded } where awarded is false if it was already completed.
@@ -109,6 +122,9 @@ export async function recordCompletion(
     ref_id: quest.id,
   });
   if (ledgerErr) throw ledgerErr;
+
+  const { processReferralMilestones } = await import('@/lib/points/referrals.server');
+  await processReferralMilestones(supabase, user.id);
 
   return { awarded: true };
 }

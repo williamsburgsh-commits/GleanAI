@@ -4,6 +4,7 @@ import {
   getUserByTelegramId,
   getQuestBySlug,
   recordCompletion,
+  isTxSignatureClaimedGlobally,
 } from '@/lib/quests.server';
 import { runVerification } from '@/lib/solana/verify';
 import { getUsedTxSignaturesForQuestType } from '@/lib/telegramCommunity';
@@ -92,6 +93,17 @@ export async function POST(request: Request) {
         awarded: false,
         detail: result.detail,
       });
+    }
+
+    if (result.txSignature) {
+      const claimed = await isTxSignatureClaimedGlobally(supabase, result.txSignature);
+      if (claimed) {
+        return NextResponse.json({
+          passed: false,
+          awarded: false,
+          detail: 'This transaction was already used for a quest.',
+        });
+      }
     }
 
     const { awarded } = await recordCompletion(supabase, {

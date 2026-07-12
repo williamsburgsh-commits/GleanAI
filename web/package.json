@@ -12,7 +12,8 @@
     "generate:avatar": "node scripts/generate-bot-avatar.mjs",
     "generate:pfp": "node scripts/generate-bot-avatar.mjs --pfp-only",
     "generate:wordmark-pfp": "node scripts/generate-wordmark-pfp.mjs",
-    "generate:boss-portraits": "node scripts/generate-boss-portraits.mjs"
+    "generate:boss-portraits": "node scripts/generate-boss-portraits.mjs",
+    "generate:hero-teaser": "node scripts/generate-hero-teaser.mjs"
   },
   "dependencies": {
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",

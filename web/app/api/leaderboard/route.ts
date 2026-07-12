@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabaseServer';
+import {
+  getAllTimeLeaderboard,
+  getAllTimeRank,
+  getEpochLeaderboard,
+  getEpochRank,
+} from '@/lib/points/leaderboard.server';
+import { LEADERBOARD_MINI_TOP_N, LEADERBOARD_MIN_POINTS } from '@/lib/points/rules';
 
 export const runtime = 'nodejs';
 
-const TOP_N = 10;
-
-// GET /api/leaderboard?telegramId=123
-// Returns the top players by points, plus the caller's rank (if provided).
+// GET /api/leaderboard?telegramId=123&mode=alltime|epoch&limit=50
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const telegramId = (searchParams.get('telegramId') || '').trim();
+  const mode = (searchParams.get('mode') || 'alltime').toLowerCase();
+  const limitRaw = Number(searchParams.get('limit') || LEADERBOARD_MINI_TOP_N);
+  const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : LEADERBOARD_MINI_TOP_N;
 
   let supabase;
   try {
@@ -20,13 +27,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    const mode = searchParams.get('mode');
-    if (mode === 'fighter') {
+    if (searchParams.get('mode') === 'fighter') {
       const { data: cards, error } = await supabase
         .from('fighter_cards')
         .select('user_id, total_score')
         .order('total_score', { ascending: false })
-        .limit(TOP_N);
+        .limit(limit);
       if (error) throw error;
 
       const top = [];
@@ -74,41 +80,45 @@ export async function GET(request: Request) {
       return NextResponse.json({ top, myRank, myPoints, mode: 'fighter' });
     }
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('telegram_id, telegram_username, points')
-      .order('points', { ascending: false })
-      .limit(TOP_N);
-    if (error) throw error;
+    if (mode === 'epoch') {
+      const { epoch, top } = await getEpochLeaderboard(supabase, limit);
+      let myRank: number | null = null;
+      let myPoints = 0;
+      if (telegramId && /^\d+$/.test(telegramId)) {
+        const rank = await getEpochRank(supabase, telegramId);
+        myRank = rank.myRank;
+        myPoints = rank.myPoints;
+      }
+      return NextResponse.json({
+        top,
+        myRank,
+        myPoints,
+        mode: 'epoch',
+        epoch: {
+          slug: epoch.slug,
+          startsAt: epoch.starts_at,
+          endsAt: epoch.ends_at,
+        },
+        minPoints: LEADERBOARD_MIN_POINTS,
+      });
+    }
 
-    const top = (data ?? []).map((u, i) => ({
-      rank: i + 1,
-      telegramId: String(u.telegram_id),
-      username: u.telegram_username as string | null,
-      points: u.points as number,
-    }));
-
+    const top = await getAllTimeLeaderboard(supabase, limit);
     let myRank: number | null = null;
     let myPoints = 0;
     if (telegramId && /^\d+$/.test(telegramId)) {
-      const { data: me, error: meErr } = await supabase
-        .from('users')
-        .select('points')
-        .eq('telegram_id', telegramId)
-        .maybeSingle();
-      if (meErr) throw meErr;
-      if (me) {
-        myPoints = me.points as number;
-        const { count, error: cntErr } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true })
-          .gt('points', myPoints);
-        if (cntErr) throw cntErr;
-        myRank = (count ?? 0) + 1;
-      }
+      const rank = await getAllTimeRank(supabase, telegramId);
+      myRank = rank.myRank;
+      myPoints = rank.myPoints;
     }
 
-    return NextResponse.json({ top, myRank, myPoints });
+    return NextResponse.json({
+      top,
+      myRank,
+      myPoints,
+      mode: 'alltime',
+      minPoints: LEADERBOARD_MIN_POINTS,
+    });
   } catch (err) {
     console.error('[api/leaderboard] error', err);
     return NextResponse.json(

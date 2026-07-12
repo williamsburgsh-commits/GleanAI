@@ -54,6 +54,13 @@ export default function MiniApp() {
 
   const [top, setTop] = useState<LeaderRow[]>([]);
   const [myRank, setMyRank] = useState<number | null>(null);
+  const [boardMode, setBoardMode] = useState<'alltime' | 'epoch'>('epoch');
+  const [epochPoints, setEpochPoints] = useState(0);
+  const [pointsBreakdown, setPointsBreakdown] = useState({
+    epochQuests: 0,
+    epochBattles: 0,
+    epochReferrals: 0,
+  });
 
   const telegramId = player?.telegramId ?? null;
 
@@ -83,10 +90,11 @@ export default function MiniApp() {
     }
   }, []);
 
-  const loadLeaderboard = useCallback(async (tg: string | null) => {
+  const loadLeaderboard = useCallback(async (tg: string | null, mode: 'alltime' | 'epoch') => {
     try {
-      const qs = tg ? `?telegramId=${tg}` : '';
-      const res = await fetch(`/api/leaderboard${qs}`);
+      const qs = new URLSearchParams({ mode, limit: '10' });
+      if (tg) qs.set('telegramId', tg);
+      const res = await fetch(`/api/leaderboard?${qs}`);
       if (!res.ok) return;
       const data = await res.json();
       setTop(data.top ?? []);
@@ -96,14 +104,37 @@ export default function MiniApp() {
     }
   }, []);
 
+  const loadPointsSummary = useCallback(async (tg: string | null) => {
+    if (!tg) return;
+    try {
+      const res = await fetch(`/api/points/summary?telegramId=${tg}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setEpochPoints(data.epochTotal ?? 0);
+      setPointsBreakdown({
+        epochQuests: data.epochQuests ?? 0,
+        epochBattles: data.epochBattles ?? 0,
+        epochReferrals: data.epochReferrals ?? 0,
+      });
+    } catch {
+      /* non-critical */
+    }
+  }, []);
+
   useEffect(() => {
     if (loading) return;
     setWallet(getStoredWallet());
     if (player?.walletAddress) setWalletLinked(true);
     if (player?.points) setPoints(player.points);
     loadQuests(telegramId);
-    loadLeaderboard(telegramId);
-  }, [loading, telegramId, loadQuests, loadLeaderboard, player?.walletAddress, player?.points]);
+    loadLeaderboard(telegramId, boardMode);
+    loadPointsSummary(telegramId);
+  }, [loading, telegramId, boardMode, loadQuests, loadLeaderboard, loadPointsSummary, player?.walletAddress, player?.points]);
+
+  useEffect(() => {
+    if (loading || !telegramId) return;
+    loadLeaderboard(telegramId, boardMode);
+  }, [boardMode, loading, telegramId, loadLeaderboard]);
 
   // After connecting wallet in the external browser, refresh when user returns.
   useEffect(() => {
@@ -112,7 +143,8 @@ export default function MiniApp() {
     const refresh = () => {
       if (document.visibilityState === 'visible') {
         loadQuests(telegramId);
-        loadLeaderboard(telegramId);
+        loadLeaderboard(telegramId, boardMode);
+        loadPointsSummary(telegramId);
       }
     };
 
@@ -155,7 +187,8 @@ export default function MiniApp() {
       setWalletAddress(null);
       haptic('success');
       await loadQuests(telegramId);
-      await loadLeaderboard(telegramId);
+      await loadLeaderboard(telegramId, boardMode);
+      await loadPointsSummary(telegramId);
     } catch (err) {
       haptic('error');
       setDisconnectError(
@@ -192,7 +225,8 @@ export default function MiniApp() {
       haptic(data.passed ? 'success' : 'error');
       if (data.passed) {
         await loadQuests(telegramId);
-        await loadLeaderboard(telegramId);
+        await loadLeaderboard(telegramId, boardMode);
+        await loadPointsSummary(telegramId);
       }
     } catch (err) {
       haptic('error');
@@ -288,13 +322,13 @@ export default function MiniApp() {
               <span className="h-3 w-3"><PixelStar /></span>
               {points}
             </div>
-            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">points</div>
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">lifetime</div>
           </div>
           <div>
             <div className="font-pixel text-[14px] text-phosphor glow-text">
-              {doneCount}/{quests.length || '—'}
+              {epochPoints}
             </div>
-            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">quests</div>
+            <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">this week</div>
           </div>
           <div>
             <div className="font-pixel text-[14px] text-magenta glow-magenta">
@@ -303,6 +337,12 @@ export default function MiniApp() {
             <div className="mt-1 font-term text-[14px] uppercase tracking-[0.2em] text-ash">rank</div>
           </div>
         </div>
+        <p className="mt-3 text-center font-term text-[13px] text-ash">
+          Earned this week — quests {pointsBreakdown.epochQuests} · battles{' '}
+          {pointsBreakdown.epochBattles} · referrals {pointsBreakdown.epochReferrals}
+          {' · '}
+          <span className="text-phosphor">→ $GLEAN at launch</span>
+        </p>
         {/* Progress bar */}
         <div className="mt-4">
           <div className="mb-1 flex justify-between font-term text-[14px] uppercase tracking-[0.2em] text-ash">
@@ -451,8 +491,29 @@ export default function MiniApp() {
 
       {/* Leaderboard */}
       <CrtPanel label="LEADERBOARD" tone="amber">
-        <div className="mb-2 flex items-center gap-2 text-amber">
-          <span className="h-4 w-4"><PixelTrophy /></span>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-amber">
+            <span className="h-4 w-4"><PixelTrophy /></span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className={boardMode === 'epoch' ? 'chip-btn-amber' : 'chip-btn'}
+              onClick={() => setBoardMode('epoch')}
+            >
+              week
+            </button>
+            <button
+              type="button"
+              className={boardMode === 'alltime' ? 'chip-btn-amber' : 'chip-btn'}
+              onClick={() => setBoardMode('alltime')}
+            >
+              all-time
+            </button>
+            <Link href="/leaderboard" className="chip-btn-cyan">
+              full board
+            </Link>
+          </div>
         </div>
         {top.length === 0 ? (
           <p className="py-3 font-term text-[16px] text-ash">No players yet. Be the first.</p>

@@ -120,6 +120,9 @@ export async function POST(request: Request) {
         .update({ wallet_address: walletAddress })
         .eq('id', existing.id);
       if (updateErr) throw updateErr;
+
+      const { processReferralMilestones } = await import('@/lib/points/referrals.server');
+      await processReferralMilestones(supabase, existing.id);
     } else {
       // Web-first user (hasn't messaged the bot yet): create with a code.
       let created = false;
@@ -141,6 +144,16 @@ export async function POST(request: Request) {
         }
       }
       if (!created) throw new Error('Could not create user (code collisions).');
+
+      const { data: createdUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegramId)
+        .single();
+      if (createdUser?.id) {
+        const { processReferralMilestones } = await import('@/lib/points/referrals.server');
+        await processReferralMilestones(supabase, createdUser.id);
+      }
     }
 
     return NextResponse.json({ ok: true, walletAddress });

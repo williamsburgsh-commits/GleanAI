@@ -43,7 +43,7 @@ values
    100, 'manual', 6),
 
   ('refer-friend', 'Bring a Friend',
-   'Invite a friend with your referral link and get them onboarded.',
+   'Invite a friend. You earn when they link a wallet and complete 3 quests.',
    100, 'manual', 7),
 
   ('swap-again', 'Swap Pro',

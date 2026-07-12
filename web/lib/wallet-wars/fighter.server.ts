@@ -171,17 +171,21 @@ export async function awardBattlePoints(
     winStreak = 0;
   }
 
-  await supabase
-    .from('users')
-    .update({ points: pointsAfter, win_streak: winStreak })
-    .eq('id', userId);
+  if (amount > 0) {
+    await supabase
+      .from('users')
+      .update({ points: pointsAfter, win_streak: winStreak })
+      .eq('id', userId);
 
-  await supabase.from('points_ledger').insert({
-    user_id: userId,
-    amount,
-    reason,
-    ref_id: refId ?? null,
-  });
+    await supabase.from('points_ledger').insert({
+      user_id: userId,
+      amount,
+      reason,
+      ref_id: refId ?? null,
+    });
+  } else {
+    await supabase.from('users').update({ win_streak: winStreak }).eq('id', userId);
+  }
 
   return { pointsBefore, pointsAfter, winStreak };
 }

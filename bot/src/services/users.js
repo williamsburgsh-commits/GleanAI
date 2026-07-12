@@ -1,7 +1,6 @@
 import { supabase } from '../supabase.js';
 import { unwrap } from '../lib/errors.js';
 import { generateReferralCode } from '../lib/referral.js';
-import { REFERRAL_BONUS_POINTS } from '../config.js';
 
 // Fetch a user by Telegram ID, or null if not found.
 export async function getUserByTelegramId(telegramId) {
@@ -59,8 +58,8 @@ export async function getOrCreateUser({ telegramId, username }) {
   return { user, isNew: true };
 }
 
-// Apply a referral once: link referred -> referrer and award bonus points to
-// the referrer. Idempotent via the referrals.referred_id unique constraint.
+// Apply a referral once: link referred -> referrer. Points release when the
+// referred user links a wallet and completes 3 quests (handled server-side).
 export async function applyReferral({ referredUserId, referralCode }) {
   if (!referralCode) return { applied: false };
 
@@ -79,7 +78,7 @@ export async function applyReferral({ referredUserId, referralCode }) {
   const { error: insertError } = await supabase.from('referrals').insert({
     referrer_id: referrer.id,
     referred_id: referredUserId,
-    points_awarded: REFERRAL_BONUS_POINTS,
+    points_awarded: 0,
   });
 
   // Already referred (unique violation) -> nothing to do.
@@ -95,53 +94,6 @@ export async function applyReferral({ referredUserId, referralCode }) {
       .eq('id', referredUserId),
     'applyReferral:setReferredBy'
   );
-
-  await awardPoints({
-    userId: referrer.id,
-    amount: REFERRAL_BONUS_POINTS,
-    reason: 'referral',
-  });
-
-  // Complete refer-friend quest for the referrer.
-  const referQuest = unwrap(
-    await supabase
-      .from('quests')
-      .select('id, slug, points')
-      .eq('slug', 'refer-friend')
-      .eq('is_active', true)
-      .maybeSingle(),
-    'applyReferral:referQuest'
-  );
-
-  if (referQuest) {
-    const { error: qcErr } = await supabase.from('quest_completions').insert({
-      user_id: referrer.id,
-      quest_id: referQuest.id,
-      points_awarded: referQuest.points,
-    });
-    if (!qcErr) {
-      const refUser = unwrap(
-        await supabase.from('users').select('points').eq('id', referrer.id).single(),
-        'applyReferral:refPoints'
-      );
-      unwrap(
-        await supabase
-          .from('users')
-          .update({ points: refUser.points + referQuest.points })
-          .eq('id', referrer.id),
-        'applyReferral:refQuestPoints'
-      );
-      unwrap(
-        await supabase.from('points_ledger').insert({
-          user_id: referrer.id,
-          amount: referQuest.points,
-          reason: 'quest:refer-friend',
-          ref_id: referQuest.id,
-        }),
-        'applyReferral:refLedger'
-      );
-    }
-  }
 
   return { applied: true };
 }
