@@ -152,3 +152,59 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// DELETE /api/wallet  { telegramId }
+// Clears the linked wallet so the user can connect a different one.
+export async function DELETE(request: Request) {
+  let body: { telegramId?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+  }
+
+  const telegramId = (body.telegramId || '').toString().trim();
+  if (!telegramId || !/^\d+$/.test(telegramId)) {
+    return NextResponse.json(
+      { error: 'A valid telegramId is required.' },
+      { status: 400 }
+    );
+  }
+
+  let supabase;
+  try {
+    supabase = getServiceClient();
+  } catch (err) {
+    console.error('[api/wallet] config error', err);
+    return NextResponse.json({ error: 'Server is misconfigured.' }, { status: 500 });
+  }
+
+  try {
+    const { data: user, error: findErr } = await supabase
+      .from('users')
+      .select('id, wallet_address')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+    if (findErr) throw findErr;
+    if (!user) {
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+    }
+    if (!user.wallet_address) {
+      return NextResponse.json({ ok: true, unlinked: false });
+    }
+
+    const { error: updateErr } = await supabase
+      .from('users')
+      .update({ wallet_address: null })
+      .eq('id', user.id);
+    if (updateErr) throw updateErr;
+
+    return NextResponse.json({ ok: true, unlinked: true });
+  } catch (err) {
+    console.error('[api/wallet] unlink error', err);
+    return NextResponse.json(
+      { error: 'Could not disconnect wallet.' },
+      { status: 500 }
+    );
+  }
+}

@@ -93,6 +93,30 @@ export async function linkWalletToServer(walletAddress: string): Promise<void> {
   }
 }
 
+/** Unlink wallet from the Telegram account on the server. */
+export async function unlinkWalletFromServer(telegramId: string): Promise<void> {
+  const res = await fetch('/api/wallet', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ telegramId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(
+      (data as { error?: string }).error || 'Failed to disconnect wallet.'
+    );
+  }
+}
+
+/** Clear local Phantom session and unlink from server when possible. */
+export async function disconnectWallet(telegramId?: string | null): Promise<void> {
+  clearConnection();
+  const tg = telegramId ?? getTelegramId();
+  if (tg) {
+    await unlinkWalletFromServer(tg);
+  }
+}
+
 export function buildConnectUrl(opts: {
   cluster: PhantomCluster;
   appUrl: string;

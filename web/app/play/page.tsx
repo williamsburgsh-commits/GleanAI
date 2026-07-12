@@ -8,7 +8,7 @@ import { GameModeCards } from '@/components/GameModeCards';
 import { useTelegram } from '@/components/TelegramProvider';
 import {
   getStoredWallet,
-  clearConnection,
+  disconnectWallet,
 } from '@/lib/phantom';
 import { resolveTelegramId } from '@/lib/resolvePlayer';
 import {
@@ -81,8 +81,8 @@ export default function Play() {
     };
   }, [loadQuests]);
 
-  function disconnect() {
-    clearConnection();
+  async function disconnect() {
+    await disconnectWallet(tg);
     setWallet(null);
   }
 

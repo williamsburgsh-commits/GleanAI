@@ -6,7 +6,7 @@ import { CrtPanel } from '@/components/CrtPanel';
 import { BrandMark } from '@/components/BrandMark';
 import { GameModeCards } from '@/components/GameModeCards';
 import { useTelegram } from '@/components/TelegramProvider';
-import { getStoredWallet } from '@/lib/phantom';
+import { getStoredWallet, disconnectWallet } from '@/lib/phantom';
 import { getLevelProgress } from '@/lib/levels';
 import {
   PixelGhost,
@@ -41,7 +41,7 @@ function shorten(addr: string) {
 }
 
 export default function MiniApp() {
-  const { player, loading, error, inTelegram, webApp } = useTelegram();
+  const { player, loading, error, inTelegram, webApp, setWalletAddress } = useTelegram();
 
   const [quests, setQuests] = useState<QuestItem[]>([]);
   const [points, setPoints] = useState(0);
@@ -49,6 +49,8 @@ export default function MiniApp() {
   const [wallet, setWallet] = useState<string | null>(null);
   const [verify, setVerify] = useState<VerifyState>({});
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [disconnectError, setDisconnectError] = useState<string | null>(null);
 
   const [top, setTop] = useState<LeaderRow[]>([]);
   const [myRank, setMyRank] = useState<number | null>(null);
@@ -142,6 +144,30 @@ export default function MiniApp() {
     }
   }
 
+  async function onDisconnectWallet() {
+    if (!telegramId) return;
+    setDisconnectError(null);
+    setDisconnecting(true);
+    try {
+      await disconnectWallet(telegramId);
+      setWallet(null);
+      setWalletLinked(false);
+      setWalletAddress(null);
+      haptic('success');
+      await loadQuests(telegramId);
+      await loadLeaderboard(telegramId);
+    } catch (err) {
+      haptic('error');
+      setDisconnectError(
+        err instanceof Error ? err.message : 'Could not disconnect wallet.'
+      );
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  const displayWallet = player?.walletAddress ?? wallet;
+
   async function onVerify(slug: string) {
     if (!telegramId) {
       setVerify((s) => ({
@@ -201,13 +227,13 @@ export default function MiniApp() {
       {/* Header */}
       <header className="flex items-center justify-between">
         <BrandMark href="/app" />
-        {wallet ? (
+        {walletLinked && displayWallet ? (
           <span className="crt-tag" style={{ borderColor: '#2bd9ff', color: '#2bd9ff' }}>
-            {shorten(wallet)}
+            {shorten(displayWallet)}
           </span>
         ) : (
           <span className="crt-tag" style={{ borderColor: '#ffb437', color: '#ffb437' }}>
-            {inTelegram ? 'IN-APP' : 'BROWSER'}
+            {inTelegram ? 'NO WALLET' : 'BROWSER'}
           </span>
         )}
       </header>
@@ -291,8 +317,27 @@ export default function MiniApp() {
 
       <GameModeCards />
 
-      {/* Wallet nudge for on-chain quests */}
-      {!walletLinked ? (
+      {/* Wallet connect / disconnect */}
+      {walletLinked ? (
+        <CrtPanel label="WALLET" tone="cyan">
+          <p className="mb-3 font-term text-[16px] leading-snug text-ash">
+            Connected as{' '}
+            <span className="text-cyan">{displayWallet ? shorten(displayWallet) : 'linked'}</span>.
+            Disconnect to switch wallets or return to the connect screen.
+          </p>
+          <button
+            type="button"
+            onClick={onDisconnectWallet}
+            disabled={disconnecting}
+            className="chip-btn-magenta w-full"
+          >
+            {disconnecting ? 'Disconnecting…' : 'Disconnect Wallet'}
+          </button>
+          {disconnectError ? (
+            <p className="mt-2 font-term text-[15px] text-magenta">{disconnectError}</p>
+          ) : null}
+        </CrtPanel>
+      ) : (
         <CrtPanel label="WALLET" tone="amber">
           <div className="mb-3 flex items-start gap-3">
             <div className="mt-0.5 h-7 w-7 shrink-0 text-amber">
@@ -316,7 +361,7 @@ export default function MiniApp() {
             I connected — refresh
           </button>
         </CrtPanel>
-      ) : null}
+      )}
 
       {/* Quest log — arcade stage select */}
       <CrtPanel label="QUEST LOG" tone="phosphor">
