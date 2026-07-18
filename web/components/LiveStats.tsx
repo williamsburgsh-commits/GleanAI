@@ -68,7 +68,7 @@ function StatCell({
 }
 
 export function LiveStats() {
-  const rootRef = useRef<HTMLElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const [inView, setInView] = useState(false);
   const [stats, setStats] = useState<StatsPayload>({
     walletsConnected: 0,
