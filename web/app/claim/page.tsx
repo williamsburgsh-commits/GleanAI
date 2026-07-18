@@ -29,6 +29,8 @@ interface ClaimPayload {
     mint: string | null;
     programId: string | null;
     claimsReady: boolean;
+    badgeStaked?: boolean;
+    stakingRequired?: boolean;
   };
 }
 
@@ -164,6 +166,18 @@ function ClaimClient() {
             </p>
             {data.leaf.claimedAt ? (
               <p className="font-term text-[16px] text-phosphor">Already claimed.</p>
+            ) : data.config.stakingRequired && !data.config.badgeStaked ? (
+              <div>
+                <p className="mb-3 font-term text-[16px] text-amber">
+                  Stake your Fighter Badge in Training Grounds to unlock claims.
+                </p>
+                <a
+                  href="/wallet-wars/training"
+                  className="arcade-btn-cyan inline-block w-full text-center text-[10px]"
+                >
+                  OPEN TRAINING GROUNDS
+                </a>
+              </div>
             ) : (
               <button
                 type="button"

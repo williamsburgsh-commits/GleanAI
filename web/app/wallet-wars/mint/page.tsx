@@ -80,6 +80,34 @@ export default function MintBadgePage() {
       .catch(() => setReady(false));
   }, []);
 
+  const syncMint = async () => {
+    const tg = getTelegramId();
+    if (!tg) {
+      setError('Connect Phantom and sign in first.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/mint/fighter-badge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramId: tg, sync: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Could not sync badge from wallet history.');
+      }
+      setMsg(data.detail || 'Badge linked!');
+      setReady(true);
+    } catch (e) {
+      setError(walletErrorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const mint = async () => {
     const wallet = getStoredWallet();
     const tg = getTelegramId();
@@ -166,27 +194,55 @@ export default function MintBadgePage() {
       }
       const signature = String(sendBody.signature);
 
+      // Confirm is best-effort — NFT may already be in the wallet if RPC is slow.
       const confirmRes = await fetch('/api/claims/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ signature, blockhash, lastValidBlockHeight }),
       });
       const confirmBody = await confirmRes.json().catch(() => ({}));
-      if (!confirmRes.ok) {
-        throw new Error(confirmBody.error || 'Transaction sent but confirmation failed.');
+      const confirmHardFail =
+        confirmRes.status >= 400 &&
+        confirmRes.status !== 202 &&
+        !confirmBody.pending;
+
+      // Always try to record mint + quest even if confirm timed out.
+      let data: {
+        detail?: string;
+        error?: string;
+        awarded?: boolean;
+        mintAddress?: string | null;
+      } = {};
+      let verifyOk = false;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        if (attempt > 0) {
+          await new Promise((r) => setTimeout(r, 2000 * attempt));
+        }
+        const res = await fetch('/api/mint/fighter-badge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telegramId: tg,
+            txSignature: signature,
+            mintAddress: mintPk.toBase58(),
+          }),
+        });
+        data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          verifyOk = true;
+          break;
+        }
       }
 
-      const res = await fetch('/api/mint/fighter-badge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegramId: tg,
-          txSignature: signature,
-          mintAddress: mintPk.toBase58(),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Verification failed');
+      if (!verifyOk) {
+        if (confirmHardFail) {
+          throw new Error(confirmBody.error || 'Transaction sent but confirmation failed.');
+        }
+        throw new Error(
+          data.error ||
+            `Mint likely succeeded (${signature.slice(0, 8)}…) but site verify lagged. Refresh Wallet Wars in a moment, or retry verify.`
+        );
+      }
 
       setMsg(data.detail || 'Badge minted!');
       setReady(true);
@@ -225,14 +281,29 @@ export default function MintBadgePage() {
         ) : null}
         {error && <p className="mb-2 font-term text-magenta">{error}</p>}
         {msg && <p className="mb-2 font-term text-phosphor">{msg}</p>}
-        <button
-          type="button"
-          className="arcade-btn"
-          disabled={busy || ready === false}
-          onClick={mint}
-        >
-          {busy ? 'MINTING…' : 'MINT BADGE NFT'}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="arcade-btn"
+            disabled={busy || ready === false}
+            onClick={mint}
+          >
+            {busy ? 'WORKING…' : 'MINT BADGE NFT'}
+          </button>
+          <button
+            type="button"
+            className="arcade-btn-cyan"
+            disabled={busy}
+            onClick={syncMint}
+            title="Use if the NFT is already in Phantom but the site did not update"
+          >
+            SYNC FROM WALLET
+          </button>
+        </div>
+        <p className="mt-3 font-term text-xs text-ash">
+          Already minted but the site said it failed? Tap Sync — it links the NFT from your
+          wallet history without minting again.
+        </p>
       </CrtPanel>
 
       {inTelegram && (

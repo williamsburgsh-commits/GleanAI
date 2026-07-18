@@ -15,6 +15,7 @@ export const QUEST_BOOST_MAP: Record<string, Partial<QuestBonus>> = {
   'stake-more': { armor: 15 },
   'mint-nft': { power: 30 },
   'mint-fighter-badge': { power: 40 },
+  'stake-fighter-badge': { power: 35, armor: 10 },
 };
 
 export const QUEST_BOOST_HINTS: { slug: string; label: string; boost: Partial<QuestBonus> }[] = [
@@ -26,6 +27,7 @@ export const QUEST_BOOST_HINTS: { slug: string; label: string; boost: Partial<Qu
   { slug: 'stake-more', label: 'Stake More', boost: { armor: 15 } },
   { slug: 'mint-nft', label: 'Mint NFT', boost: { power: 30 } },
   { slug: 'mint-fighter-badge', label: 'Fighter Badge', boost: { power: 40 } },
+  { slug: 'stake-fighter-badge', label: 'Train Badge', boost: { power: 35, armor: 10 } },
 ];
 
 export function computeQuestBonus(completedSlugs: Set<string>): QuestBonus {

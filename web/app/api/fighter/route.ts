@@ -52,6 +52,12 @@ export async function GET(request: Request) {
         questBonus: fighter.quest_bonus,
         scannedAt: fighter.scanned_at,
         badgeMint: fighter.badge_mint ?? null,
+        badgeStaked: Boolean(
+          fighter.badge_staked_at &&
+            (!fighter.badge_unstaked_at ||
+              new Date(fighter.badge_staked_at).getTime() >
+                new Date(fighter.badge_unstaked_at).getTime())
+        ),
         canRescan: cooldown.allowed,
         nextRescanAt: cooldown.nextAt?.toISOString() ?? null,
       },

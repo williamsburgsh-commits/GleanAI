@@ -284,6 +284,20 @@ export default function WalletWarsPage() {
             </CrtPanel>
           ) : null}
 
+          {fighter?.badgeMint ? (
+            <CrtPanel label="TRAINING GROUNDS" tone="phosphor" className="mb-4">
+              <p className="mb-3 font-term text-sm">
+                Stake your Fighter Badge on-chain to train POWER and unlock Merkle claims.
+              </p>
+              <Link
+                href="/wallet-wars/training"
+                className="arcade-btn inline-block text-[10px]"
+              >
+                ENTER TRAINING
+              </Link>
+            </CrtPanel>
+          ) : null}
+
           <CrtPanel label="BOSS GAUNTLET" tone="magenta" className="mb-4">
             <p className="mb-2 font-term text-sm">
               {gauntletProgress?.status === 'champion'

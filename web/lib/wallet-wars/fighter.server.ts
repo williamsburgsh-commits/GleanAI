@@ -30,6 +30,10 @@ export interface FighterCardRow {
   quest_bonus: QuestBonus;
   scanned_at: string;
   badge_mint?: string | null;
+  badge_staked_at?: string | null;
+  badge_unstaked_at?: string | null;
+  training_epochs_claimed?: number;
+  training_power_bonus?: number;
 }
 
 export interface BattleRow {

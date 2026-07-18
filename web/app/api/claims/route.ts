@@ -36,6 +36,8 @@ export async function GET(request: Request) {
         programId: info.config.programId || null,
         pointsToUnits: info.config.pointsToUnits,
         claimsReady: info.config.claimsReady,
+        badgeStaked: info.config.badgeStaked,
+        stakingRequired: info.config.stakingRequired,
       },
     });
   } catch (err) {

@@ -30,6 +30,8 @@ interface ClaimPayload {
     programId: string | null;
     pointsToUnits: number;
     claimsReady: boolean;
+    badgeStaked?: boolean;
+    stakingRequired?: boolean;
   };
 }
 
@@ -158,6 +160,7 @@ export function ClaimTab({ telegramId, webApp, haptic }: ClaimTabProps) {
 
   const claimed = Boolean(data.leaf.claimedAt);
   const tokens = formatUnits(data.leaf.amount, data.epoch.pointsToUnits);
+  const needsStake = Boolean(data.config.stakingRequired && !data.config.badgeStaked);
 
   return (
     <>
@@ -178,6 +181,17 @@ export function ClaimTab({ telegramId, webApp, haptic }: ClaimTabProps) {
           {data.leaf.points} pts · index {data.leaf.leafIndex}
         </p>
 
+        {needsStake && !claimed ? (
+          <div className="mb-4">
+            <p className="mb-3 font-term text-[15px] leading-snug text-amber">
+              Stake your Fighter Badge in Training Grounds to unlock claims.
+            </p>
+            <a href="/wallet-wars/training" className="arcade-btn-cyan inline-block w-full text-center text-[10px]">
+              OPEN TRAINING GROUNDS
+            </a>
+          </div>
+        ) : null}
+
         {claimed ? (
           <p className="text-center font-term text-[16px] text-phosphor">
             Claimed
@@ -187,14 +201,20 @@ export function ClaimTab({ telegramId, webApp, haptic }: ClaimTabProps) {
           <button
             type="button"
             onClick={onClaim}
-            disabled={busy}
+            disabled={busy || needsStake}
             className="arcade-btn w-full"
           >
-            {busy ? 'Opening…' : ready ? 'Claim tokens' : 'Eligible — vault not live'}
+            {busy
+              ? 'Opening…'
+              : needsStake
+                ? 'Stake badge to unlock'
+                : ready
+                  ? 'Claim tokens'
+                  : 'Eligible — vault not live'}
           </button>
         )}
 
-        {!ready && !claimed ? (
+        {!ready && !claimed && !needsStake ? (
           <p className="mt-3 font-term text-[14px] text-mute">
             Set CLAIM_PROGRAM_ID + CLAIM_MINT (and restart the web app) to enable on-chain claim.
           </p>

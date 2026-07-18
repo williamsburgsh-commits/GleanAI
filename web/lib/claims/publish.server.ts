@@ -195,7 +195,10 @@ export async function getClaimForTelegramUser(
     claimedAt: string | null;
     claimTx: string | null;
   } | null;
-  config: ReturnType<typeof getClaimConfig>;
+  config: ReturnType<typeof getClaimConfig> & {
+    badgeStaked: boolean;
+    stakingRequired: boolean;
+  };
 } | null> {
   const { data: user, error: userErr } = await supabase
     .from('users')
@@ -204,6 +207,20 @@ export async function getClaimForTelegramUser(
     .maybeSingle();
   if (userErr) throw userErr;
   if (!user) return null;
+
+  const { data: fighter, error: fighterErr } = await supabase
+    .from('fighter_cards')
+    .select('badge_staked_at, badge_unstaked_at')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (fighterErr) throw fighterErr;
+
+  const badgeStaked = Boolean(
+    fighter?.badge_staked_at &&
+      (!fighter.badge_unstaked_at ||
+        new Date(fighter.badge_staked_at).getTime() >
+          new Date(fighter.badge_unstaked_at).getTime())
+  );
 
   const { data: epoch, error: epochErr } = await supabase
     .from('claim_epochs')
@@ -214,7 +231,15 @@ export async function getClaimForTelegramUser(
     .maybeSingle();
   if (epochErr) throw epochErr;
 
-  const config = getClaimConfig();
+  const base = getClaimConfig();
+  const config = {
+    ...base,
+    badgeStaked,
+    stakingRequired: true,
+    // Brief: mint + stake NFTs to unlock claims.
+    claimsReady: base.claimsReady && badgeStaked,
+  };
+
   if (!epoch) return { epoch: null, leaf: null, config };
 
   const { data: leaf, error: leafErr } = await supabase

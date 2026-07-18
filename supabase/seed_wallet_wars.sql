@@ -23,7 +23,11 @@ values
 
   ('challenge-friend', 'Challenge a Friend',
    'Send a battle invite to a friend and complete a Wallet Wars duel.',
-   75, 'manual', 15)
+   75, 'manual', 15),
+
+  ('stake-fighter-badge', 'Train Fighter Badge',
+   'Stake your Glean Fighter Badge NFT in the Training Grounds to start accruing POWER.',
+   150, 'manual', 16)
 on conflict (slug) do update set
   title = excluded.title,
   description = excluded.description,
