@@ -1,29 +1,33 @@
 import { ReactNode } from 'react';
+import { accents, type AccentTone } from '@/lib/palette';
 
-// Tone → accent color. The cabinet uses the same 4-color palette everywhere;
+// Tone → accent color. The cabinet uses the same palette everywhere;
 // tone just picks which accent the panel's bezel/LED lights up in.
-const TONE = {
+const TONE: Record<
+  AccentTone,
+  { border: string; text: string; led: string }
+> = {
   phosphor: {
-    border: '#27ff7d',
+    border: accents.phosphor,
     text: 'text-phosphor',
     led: 'bg-phosphor',
   },
   magenta: {
-    border: '#ff3da6',
+    border: accents.magenta,
     text: 'text-magenta',
     led: 'bg-magenta',
   },
   cyan: {
-    border: '#2bd9ff',
+    border: accents.cyan,
     text: 'text-cyan',
     led: 'bg-cyan',
   },
   amber: {
-    border: '#ffb437',
+    border: accents.amber,
     text: 'text-amber',
     led: 'bg-amber',
   },
-} as const;
+};
 
 export function CrtPanel({
   children,
@@ -34,7 +38,7 @@ export function CrtPanel({
   children: ReactNode;
   label?: string;
   className?: string;
-  tone?: 'phosphor' | 'magenta' | 'cyan' | 'amber';
+  tone?: AccentTone;
 }) {
   const t = TONE[tone];
 

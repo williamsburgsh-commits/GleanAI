@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import { palette } from './lib/palette';
 
 const config: Config = {
   content: [
@@ -8,27 +9,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── ArcAI palette: 4 colors, used consistently as a cabinet would ──
-        // 1. Cabinet black (the housing — everything sits on this)
-        void: '#06080d', // near-black background, slightly blue
-        screen: '#0a0e15', // the "tube" surface behind content
-        slate: '#11151f',
-        grid: '#1b2130',
-        bone: '#e7ece5', // primary text (off-white phosphor)
-        ash: '#7d8694', // muted text / chrome
-
-        // 2. Neon accent — primary action color (green phosphor)
-        phosphor: '#27ff7d',
-        // 3. Secondary accent — highlight / locked / cyan blue
-        cyan: '#2bd9ff',
-        // 4. Warning / locked color — used sparingly (amber)
-        amber: '#ffb437',
-        magenta: '#ff3da6', // kept ONLY for danger/errors + brand "AI" dot
-
-        // status helpers mapping to the 4 above
-        ok: '#27ff7d',
-        warn: '#ffb437',
-        danger: '#ff3da6',
+        // Surfaces & chrome
+        void: palette.void,
+        screen: palette.screen,
+        slate: palette.slate,
+        grid: palette.grid,
+        // Text
+        bone: palette.bone,
+        ash: palette.ash,
+        mute: palette.mute,
+        dim: palette.dim,
+        // Accents (see web/lib/palette.ts role map)
+        phosphor: palette.phosphor,
+        cyan: palette.cyan,
+        amber: palette.amber,
+        magenta: palette.magenta,
+        // Status aliases
+        ok: palette.phosphor,
+        warn: palette.amber,
+        danger: palette.magenta,
       },
       fontFamily: {
         // Press Start 2P for headlines/labels, VT323 for body (pixel font that
@@ -46,7 +45,7 @@ const config: Config = {
         'plunger-amber': '0 5px 0 0 #1a1106, 0 6px 0 0 rgba(0,0,0,0.6)',
         'plunger-sm': '0 3px 0 0 #04130a, 0 4px 0 0 rgba(0,0,0,0.6)',
         // crisp 1px cabinet bevel instead of soft glow
-        bevel: '0 0 0 2px #06080d, 0 0 0 4px #1b2130',
+        bevel: `0 0 0 2px ${palette.void}, 0 0 0 4px ${palette.grid}`,
       },
       keyframes: {
         flicker: {
@@ -105,6 +104,10 @@ const config: Config = {
             opacity: '0',
           },
         },
+        scrollCue: {
+          '0%, 100%': { opacity: '0.35' },
+          '50%': { opacity: '1' },
+        },
       },
       animation: {
         flicker: 'flicker 8s infinite',
@@ -117,6 +120,7 @@ const config: Config = {
         'holo-shimmer': 'holoShimmer 3s linear infinite',
         'battle-shake': 'battleShake 0.4s steps(2) 1',
         shatter: 'shatter 0.6s steps(4) forwards',
+        'scroll-cue': 'scrollCue 2.4s ease-in-out infinite',
       },
       transitionTimingFunction: {
         // no smooth easing — snappy like a coin mech

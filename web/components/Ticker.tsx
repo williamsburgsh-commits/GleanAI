@@ -3,10 +3,7 @@ export function Ticker({ items }: { items: string[] }) {
   return (
     // Cabinet marquee: a bordered strip running an attract loop. Flat borders,
     // one accent color, no glow soup.
-    <div
-      className="relative overflow-hidden bg-screen py-2"
-      style={{ borderTop: '2px solid #1b2130', borderBottom: '2px solid #1b2130' }}
-    >
+    <div className="relative overflow-hidden border-y-2 border-grid bg-screen py-2">
       <div className="animate-marquee flex w-max gap-8 whitespace-nowrap px-4">
         {doubled.map((item, i) => (
           <span

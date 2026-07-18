@@ -1,11 +1,12 @@
 'use client';
 
-export type MiniAppTab = 'play' | 'rank' | 'invite';
+export type MiniAppTab = 'play' | 'rank' | 'invite' | 'claim';
 
 const TABS: { id: MiniAppTab; label: string }[] = [
   { id: 'play', label: 'Play' },
   { id: 'rank', label: 'Rank' },
   { id: 'invite', label: 'Invite' },
+  { id: 'claim', label: 'Claim' },
 ];
 
 interface MiniAppBottomNavProps {

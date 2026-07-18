@@ -5,6 +5,18 @@
 :root {
   /* single global scale for "pixel" rendering of boxy elements */
   --px: 4px;
+  /* Palette mirrors web/lib/palette.ts — prefer tokens over raw hex */
+  --color-void: #06080d;
+  --color-screen: #0a0e15;
+  --color-grid: #1b2130;
+  --color-bone: #e7ece5;
+  --color-ash: #7d8694;
+  --color-mute: #666666;
+  --color-dim: #444444;
+  --color-phosphor: #27ff7d;
+  --color-cyan: #2bd9ff;
+  --color-amber: #ffb437;
+  --color-magenta: #ff3da6;
 }
 
 @layer base {
@@ -699,6 +711,83 @@
     box-shadow: 0 0 18px rgba(255, 61, 166, 0.35);
   }
 
+  /* Landing — section reveal + hero glow + live stats pulse */
+  .landing-reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 0.55s cubic-bezier(0.2, 0, 0, 1),
+      transform 0.55s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .landing-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .hero-wordmark-glow {
+    background: radial-gradient(
+      ellipse at center,
+      color-mix(in srgb, var(--color-phosphor) 18%, transparent) 0%,
+      transparent 68%
+    );
+    filter: blur(2px);
+  }
+
+  @keyframes liveStatsPulse {
+    0%,
+    100% {
+      box-shadow:
+        inset 2px 2px 0 0 rgba(255, 255, 255, 0.04),
+        inset -2px -2px 0 0 rgba(0, 0, 0, 0.6),
+        0 0 0 1px var(--color-void),
+        0 0 0 0 color-mix(in srgb, var(--color-phosphor) 0%, transparent);
+    }
+    50% {
+      box-shadow:
+        inset 2px 2px 0 0 rgba(255, 255, 255, 0.04),
+        inset -2px -2px 0 0 rgba(0, 0, 0, 0.6),
+        0 0 0 1px var(--color-void),
+        0 0 10px color-mix(in srgb, var(--color-phosphor) 40%, transparent);
+    }
+  }
+
+  .live-stats-panel.is-live {
+    animation: liveStatsPulse 2.8s ease-in-out infinite;
+  }
+
+  /* Landing — game preview cards + receipt print loop */
+  .game-preview-card:hover {
+    border-color: var(--color-phosphor) !important;
+    box-shadow:
+      inset 2px 2px 0 0 rgba(255, 255, 255, 0.04),
+      inset -2px -2px 0 0 rgba(0, 0, 0, 0.6),
+      0 0 0 1px var(--color-void),
+      0 0 12px color-mix(in srgb, var(--color-phosphor) 35%, transparent);
+  }
+
+  @keyframes receiptPrintLine {
+    0% {
+      opacity: 0;
+      transform: translateY(-2px);
+    }
+    12% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    88% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .receipt-print-line {
+    opacity: 0;
+    animation: receiptPrintLine 3.2s steps(2) infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .fighter-shatter {
       animation: none;
@@ -708,6 +797,18 @@
     .battle-enter-left,
     .battle-enter-right,
     .battle-winner-pop {
+      animation: none !important;
+    }
+    .receipt-print-line {
+      animation: none !important;
+      opacity: 1;
+    }
+    .landing-reveal {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+    .live-stats-panel.is-live {
       animation: none !important;
     }
   }

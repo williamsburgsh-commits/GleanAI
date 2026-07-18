@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CrtPanel } from '@/components/CrtPanel';
 import { BrandMark } from '@/components/BrandMark';
 import { RecipientPicker, type RecipientUser } from '@/components/admin/RecipientPicker';
+import { ClaimsPanel } from '@/components/admin/ClaimsPanel';
 
 type Status = 'pending' | 'paid' | 'cancelled';
 
@@ -201,6 +202,8 @@ export default function AdminPage() {
           logout
         </button>
       </header>
+
+      <ClaimsPanel />
 
       {/* Summary */}
       <div className="mb-6 grid grid-cols-3 gap-3">

@@ -1,0 +1,190 @@
+'use client';
+
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import {
+  Connection,
+  PublicKey,
+  Transaction,
+  clusterApiUrl,
+} from '@solana/web3.js';
+import { BrandMark } from '@/components/BrandMark';
+import { CrtPanel } from '@/components/CrtPanel';
+import { buildClaimIx, isClaimsConfigured } from '@/lib/claims/distributor';
+import { getPhantomProvider } from '@/lib/phantom';
+
+interface ClaimPayload {
+  epoch: {
+    id: string;
+    slug: string;
+    merkleRoot: string;
+    mint: string;
+    pointsToUnits: number;
+  } | null;
+  leaf: {
+    leafIndex: number;
+    points: number;
+    amount: string;
+    walletAddress: string;
+    proof: string[];
+    claimedAt: string | null;
+    claimTx: string | null;
+  } | null;
+  config: {
+    mint: string | null;
+    programId: string | null;
+    claimsReady: boolean;
+  };
+}
+
+function ClaimClient() {
+  const params = useSearchParams();
+  const telegramId = params.get('tg')?.trim() ?? '';
+  const [data, setData] = useState<ClaimPayload | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!telegramId || !/^\d+$/.test(telegramId)) {
+      setError('Open this page from the Mini App Claim tab.');
+      return;
+    }
+    try {
+      setError(null);
+      const res = await fetch(`/api/claims?telegramId=${telegramId}`);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Failed to load claim.');
+      setData(body);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load claim.');
+    }
+  }, [telegramId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function onClaim() {
+    if (!data?.epoch || !data.leaf || data.leaf.claimedAt) return;
+    const programIdStr = data.config.programId;
+    const mintStr = data.config.mint || data.epoch.mint;
+    if (!isClaimsConfigured(programIdStr, mintStr)) {
+      setError('CLAIM_PROGRAM_ID / CLAIM_MINT not configured.');
+      return;
+    }
+
+    const provider = getPhantomProvider();
+    if (!provider) {
+      setError('Install Phantom (desktop) to sign the claim transaction.');
+      return;
+    }
+
+    setBusy(true);
+    setMsg(null);
+    setError(null);
+    try {
+      const connected = await provider.connect();
+      const claimant = new PublicKey(connected.publicKey.toBase58());
+
+      if (claimant.toBase58() !== data.leaf.walletAddress) {
+        throw new Error(
+          `Connected wallet ${claimant.toBase58().slice(0, 8)}… does not match claim leaf.`
+        );
+      }
+
+      const programId = new PublicKey(programIdStr!);
+      const mint = new PublicKey(mintStr!);
+      const ix = buildClaimIx({
+        programId,
+        mint,
+        claimant,
+        index: data.leaf.leafIndex,
+        amount: BigInt(data.leaf.amount),
+        proof: data.leaf.proof,
+      });
+
+      const cluster =
+        (process.env.NEXT_PUBLIC_SOLANA_CLUSTER as 'devnet' | 'mainnet-beta') || 'devnet';
+      const connection = new Connection(
+        process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(cluster),
+        'confirmed'
+      );
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      const tx = new Transaction({
+        feePayer: claimant,
+        blockhash,
+        lastValidBlockHeight,
+      }).add(ix);
+
+      const { signature: sig } = await provider.signAndSendTransaction(tx);
+      await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
+
+      await fetch('/api/claims/mark-claimed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telegramId,
+          claimEpochId: data.epoch.id,
+          claimTx: sig,
+        }),
+      });
+
+      setMsg(`Claimed · ${sig.slice(0, 12)}…`);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Claim failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-4 py-6">
+      <BrandMark href="/app" />
+      <CrtPanel label="CLAIM // SIGN" tone="phosphor">
+        {error ? <p className="mb-3 font-term text-[16px] text-magenta">{error}</p> : null}
+        {msg ? <p className="mb-3 font-term text-[16px] text-phosphor">{msg}</p> : null}
+        {!data && !error ? (
+          <p className="font-term text-[16px] text-ash">Loading…</p>
+        ) : null}
+        {data?.epoch && data.leaf ? (
+          <>
+            <p className="mb-2 font-pixel text-[10px] text-mute">EPOCH {data.epoch.slug}</p>
+            <p className="mb-4 font-term text-[17px] text-bone">
+              {data.leaf.amount} units · index {data.leaf.leafIndex}
+            </p>
+            {data.leaf.claimedAt ? (
+              <p className="font-term text-[16px] text-phosphor">Already claimed.</p>
+            ) : (
+              <button
+                type="button"
+                onClick={onClaim}
+                disabled={busy || !data.config.claimsReady}
+                className="arcade-btn w-full"
+              >
+                {busy ? 'Signing…' : 'Sign claim with Phantom'}
+              </button>
+            )}
+          </>
+        ) : data && !data.leaf ? (
+          <p className="font-term text-[16px] text-ash">No claim leaf for this account.</p>
+        ) : null}
+      </CrtPanel>
+    </main>
+  );
+}
+
+export default function ClaimPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
+          <p className="font-pixel text-[11px] text-phosphor">LOADING…</p>
+        </main>
+      }
+    >
+      <ClaimClient />
+    </Suspense>
+  );
+}

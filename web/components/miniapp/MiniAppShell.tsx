@@ -9,9 +9,12 @@ import { MiniAppBottomNav, type MiniAppTab } from './MiniAppBottomNav';
 import { PlayTab } from './PlayTab';
 import { RankTab } from './RankTab';
 import { InviteTab } from './InviteTab';
+import { ClaimTab } from './ClaimTab';
 
 function parseTab(value: string | null): MiniAppTab {
-  if (value === 'rank' || value === 'invite' || value === 'play') return value;
+  if (value === 'rank' || value === 'invite' || value === 'play' || value === 'claim') {
+    return value;
+  }
   return 'play';
 }
 
@@ -124,6 +127,10 @@ export function MiniAppShell() {
 
         {tab === 'invite' ? (
           <InviteTab telegramId={telegramId} webApp={webApp} haptic={haptic} />
+        ) : null}
+
+        {tab === 'claim' ? (
+          <ClaimTab telegramId={telegramId} webApp={webApp} haptic={haptic} />
         ) : null}
 
         <p className="text-center font-term text-[14px] uppercase tracking-[0.2em] text-ash">

@@ -1,14 +1,15 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { palette } from '@/lib/palette';
 
 export const LOGO_COLORS = {
-  void: '#06080d',
-  screen: '#0a0e15',
-  grid: '#1b2130',
-  bone: '#e7ece5',
-  phosphor: '#27ff7d',
-  cyan: '#2bd9ff',
-  amber: '#ffb437',
-  magenta: '#ff3da6',
+  void: palette.void,
+  screen: palette.screen,
+  grid: palette.grid,
+  bone: palette.bone,
+  phosphor: palette.phosphor,
+  cyan: palette.cyan,
+  amber: palette.amber,
+  magenta: palette.magenta,
   scanline: '#0d1219',
   receiptInk: '#b8c0b8',
 } as const;
