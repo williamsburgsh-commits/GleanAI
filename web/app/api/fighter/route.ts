@@ -51,6 +51,7 @@ export async function GET(request: Request) {
         rarity: fighter.rarity,
         questBonus: fighter.quest_bonus,
         scannedAt: fighter.scanned_at,
+        badgeMint: fighter.badge_mint ?? null,
         canRescan: cooldown.allowed,
         nextRescanAt: cooldown.nextAt?.toISOString() ?? null,
       },

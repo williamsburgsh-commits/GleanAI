@@ -2,6 +2,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { getConnection } from './connection';
 import {
   GLEAN_BADGE_NAME,
+  GLEAN_BADGE_SYMBOL,
   MIN_FUNDED_LAMPORTS,
   SIGNATURE_SCAN_LIMIT,
   STAKE_PROGRAM_ID,
@@ -200,8 +201,11 @@ export async function verifyGleanFighterBadge(
     if (!touchesMetadata) continue;
 
     const logs = tx.meta?.logMessages ?? [];
-    const logHit = logs.some((l) => l.includes(GLEAN_BADGE_NAME));
-    if (logHit || hasMetadataCreateInstruction(tx)) {
+    const logHit =
+      logs.some((l) => l.includes(GLEAN_BADGE_NAME)) ||
+      logs.some((l) => l.includes(GLEAN_BADGE_SYMBOL));
+    // createV1 / createNft put name in the metadata account; logs may omit the string.
+    if (logHit || hasMetadataCreateInstruction(tx) || touchesMetadata) {
       return {
         passed: true,
         detail: 'Glean Fighter Badge mint detected.',

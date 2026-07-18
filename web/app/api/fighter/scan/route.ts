@@ -53,6 +53,7 @@ export async function POST(request: Request) {
         rarity: fighter.rarity,
         questBonus: fighter.quest_bonus,
         scannedAt: fighter.scanned_at,
+        badgeMint: fighter.badge_mint ?? null,
       },
     });
   } catch (err) {

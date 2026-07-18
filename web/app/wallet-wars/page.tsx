@@ -28,6 +28,9 @@ export default function WalletWarsPage() {
   const [canRescan, setCanRescan] = useState(true);
   const [nextRescanAt, setNextRescanAt] = useState<string | null>(null);
   const [walletLinked, setWalletLinked] = useState(false);
+  /** localStorage is client-only — gate UI until mount to avoid SSR hydration mismatch. */
+  const [clientReady, setClientReady] = useState(false);
+  const [storedWallet, setStoredWallet] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<BattleHistoryRow[]>([]);
@@ -83,6 +86,11 @@ export default function WalletWarsPage() {
       status: data.status,
       nextBossSlug: data.nextBossSlug,
     });
+  }, []);
+
+  useEffect(() => {
+    setStoredWallet(getStoredWallet());
+    setClientReady(true);
   }, []);
 
   useEffect(() => {
@@ -179,8 +187,6 @@ export default function WalletWarsPage() {
     }
   };
 
-  const wallet = getStoredWallet();
-
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
       <Link href={homeHref} className="mb-4 inline-flex items-center gap-2 font-pixel text-[9px] text-cyan">
@@ -203,7 +209,7 @@ export default function WalletWarsPage() {
         </CrtPanel>
       )}
 
-      {!walletLinked && !wallet && (
+      {clientReady && !walletLinked && !storedWallet && (
         <CrtPanel label="WALLET" tone="amber" className="mb-4">
           <p className="font-term text-sm">Connect your Phantom wallet to scan your fighter.</p>
         </CrtPanel>
@@ -254,11 +260,29 @@ export default function WalletWarsPage() {
                   Next rescan: {new Date(nextRescanAt).toLocaleString()}
                 </span>
               )}
-              <Link href="/wallet-wars/mint" className="chip-btn-amber">
-                MINT BADGE
-              </Link>
+              {fighter.badgeMint ? (
+                <span className="font-term text-xs text-phosphor">
+                  Badge minted · {fighter.badgeMint.slice(0, 4)}…{fighter.badgeMint.slice(-4)}
+                </span>
+              ) : (
+                <Link href="/wallet-wars/mint" className="chip-btn-amber">
+                  MINT BADGE NFT
+                </Link>
+              )}
             </div>
           </CrtPanel>
+
+          {fighter && !fighter.badgeMint ? (
+            <CrtPanel label="FIGHTER BADGE" tone="amber" className="mb-4">
+              <p className="mb-3 font-term text-sm">
+                Your card is scanned. Mint a Metaplex NFT with your stats (rarity, power, shield…)
+                as on-chain metadata.
+              </p>
+              <Link href="/wallet-wars/mint" className="arcade-btn inline-block text-[10px]">
+                MINT BADGE NFT
+              </Link>
+            </CrtPanel>
+          ) : null}
 
           <CrtPanel label="BOSS GAUNTLET" tone="magenta" className="mb-4">
             <p className="mb-2 font-term text-sm">

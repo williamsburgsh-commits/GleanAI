@@ -1,73 +1,79 @@
+import { Connection, Keypair, PublicKey, Transaction } from '@solana/web3.js';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
-  Connection,
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-} from '@solana/web3.js';
+  createNft,
+  mplTokenMetadata,
+} from '@metaplex-foundation/mpl-token-metadata';
+import { mplToolbox } from '@metaplex-foundation/mpl-toolbox';
 import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-  createAssociatedTokenAccountInstruction,
-  createInitializeMintInstruction,
-  createMintToInstruction,
-  getAssociatedTokenAddress,
-  MINT_SIZE,
-} from '@solana/spl-token';
-import { GLEAN_BADGE_NAME } from '@/lib/solana/programs';
+  createNoopSigner,
+  percentAmount,
+  signerIdentity,
+  type KeypairSigner,
+} from '@metaplex-foundation/umi';
+import {
+  fromWeb3JsKeypair,
+  fromWeb3JsPublicKey,
+  toWeb3JsInstruction,
+} from '@metaplex-foundation/umi-web3js-adapters';
+import { GLEAN_BADGE_NAME, GLEAN_BADGE_SYMBOL } from '@/lib/solana/programs';
 
 export interface MintBadgeParams {
+  /** Used only for Umi program registry / cluster hint (RPC calls avoided for ix build). */
   connection: Connection;
   payer: PublicKey;
   metadataUri: string;
+  /** On-chain metadata name (≤32 chars). Defaults to GLEAN_BADGE_NAME. */
+  name?: string;
+  /** Recent blockhash from server (required — do not use public browser RPC). */
+  blockhash: string;
+  lastValidBlockHeight: number;
 }
 
 export async function buildFighterBadgeMintTransaction(
   params: MintBadgeParams
 ): Promise<{ transaction: Transaction; mint: PublicKey }> {
-  const { connection, payer, metadataUri } = params;
+  const {
+    connection,
+    payer,
+    metadataUri,
+    blockhash,
+    lastValidBlockHeight,
+  } = params;
+  const name = (params.name || GLEAN_BADGE_NAME).slice(0, 32);
+
   const mintKeypair = Keypair.generate();
-  const lamports = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+  const umi = createUmi(connection.rpcEndpoint)
+    .use(mplTokenMetadata())
+    .use(mplToolbox())
+    .use(signerIdentity(createNoopSigner(fromWeb3JsPublicKey(payer))));
 
-  const transaction = new Transaction();
+  const mintSigner = fromWeb3JsKeypair(mintKeypair) as KeypairSigner;
+  const builder = createNft(umi, {
+    mint: mintSigner,
+    name,
+    symbol: GLEAN_BADGE_SYMBOL.slice(0, 10),
+    uri: metadataUri,
+    sellerFeeBasisPoints: percentAmount(0),
+    tokenOwner: fromWeb3JsPublicKey(payer),
+    isMutable: true,
+  });
 
-  transaction.add(
-    SystemProgram.createAccount({
-      fromPubkey: payer,
-      newAccountPubkey: mintKeypair.publicKey,
-      space: MINT_SIZE,
-      lamports,
-      programId: TOKEN_PROGRAM_ID,
-    }),
-    createInitializeMintInstruction(
-      mintKeypair.publicKey,
-      0,
-      payer,
-      payer,
-      TOKEN_PROGRAM_ID
-    )
-  );
-
-  const ata = await getAssociatedTokenAddress(mintKeypair.publicKey, payer);
-  transaction.add(
-    createAssociatedTokenAccountInstruction(payer, ata, payer, mintKeypair.publicKey),
-    createMintToInstruction(mintKeypair.publicKey, ata, payer, 1)
-  );
-
-  // Store metadata URI in memo-like log via a no-op transfer comment in tx metadata
-  // Full Metaplex metadata is verified server-side via mint + name check.
-  void metadataUri;
-  void GLEAN_BADGE_NAME;
-
-  transaction.feePayer = payer;
-  const { blockhash } = await connection.getLatestBlockhash();
-  transaction.recentBlockhash = blockhash;
+  const transaction = new Transaction({
+    feePayer: payer,
+    blockhash,
+    lastValidBlockHeight,
+  });
+  for (const ix of builder.getInstructions()) {
+    transaction.add(toWeb3JsInstruction(ix));
+  }
   transaction.partialSign(mintKeypair);
 
   return { transaction, mint: mintKeypair.publicKey };
 }
 
+/** Absolute Metaplex JSON URI for a wallet's fighter badge. */
 export function getBadgeMetadataUri(origin: string, walletAddress: string): string {
   const base = origin.replace(/\/$/, '');
-  return `${base}/badge-metadata.json?seed=${encodeURIComponent(walletAddress)}`;
+  return `${base}/api/badge-metadata?wallet=${encodeURIComponent(walletAddress)}`;
 }

@@ -18,6 +18,7 @@ export interface FighterCardData {
   totalScore: number;
   rarity: FighterRarity;
   questBonus?: QuestBonus;
+  badgeMint?: string | null;
 }
 
 interface FighterCardProps {

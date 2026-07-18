@@ -29,6 +29,7 @@ export interface FighterCardRow {
   avatar_url: string;
   quest_bonus: QuestBonus;
   scanned_at: string;
+  badge_mint?: string | null;
 }
 
 export interface BattleRow {

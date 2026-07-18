@@ -4,7 +4,7 @@ import { getConnection } from '@/lib/solana/connection';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** Alias of /api/solana/blockhash for older clients. */
+/** Server-side blockhash — browser public RPCs often return 403. */
 export async function GET() {
   try {
     const conn = getConnection();
@@ -13,7 +13,7 @@ export async function GET() {
     );
     return NextResponse.json({ blockhash, lastValidBlockHeight });
   } catch (err) {
-    console.error('[api/claims/blockhash]', err);
+    console.error('[api/solana/blockhash]', err);
     return NextResponse.json(
       { error: 'Could not fetch blockhash.' },
       { status: 500 }

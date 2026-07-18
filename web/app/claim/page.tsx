@@ -100,7 +100,7 @@ function ClaimClient() {
       });
 
       // Public Solana RPCs often 403 from the browser — fetch blockhash server-side.
-      const bhRes = await fetch('/api/claims/blockhash', { cache: 'no-store' });
+      const bhRes = await fetch('/api/solana/blockhash', { cache: 'no-store' });
       const bhBody = await bhRes.json();
       if (!bhRes.ok) {
         throw new Error(bhBody.error || 'Could not fetch blockhash.');

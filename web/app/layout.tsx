@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
@@ -38,7 +38,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="crt-roll min-h-screen">
+      <body className="crt-roll min-h-screen" suppressHydrationWarning>
         <TelegramProvider>{children}</TelegramProvider>
       </body>
     </html>

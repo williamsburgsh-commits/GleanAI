@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
+import { Connection, PublicKey } from '@solana/web3.js';
 import { CrtPanel } from '@/components/CrtPanel';
 import { useTelegram } from '@/components/TelegramProvider';
 import { getPhantomProvider, getStoredWallet, getTelegramId } from '@/lib/phantom';
@@ -16,6 +16,34 @@ export default function MintBadgePage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState<boolean | null>(null);
+  const [rarityName, setRarityName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const wallet = getStoredWallet();
+    if (!wallet) {
+      setReady(false);
+      return;
+    }
+    const origin =
+      (typeof window !== 'undefined' &&
+        (process.env.NEXT_PUBLIC_WEB_APP_URL?.replace(/\/$/, '') ||
+          window.location.origin)) ||
+      '';
+    fetch(`${origin}/api/badge-metadata?wallet=${encodeURIComponent(wallet)}`, {
+      cache: 'no-store',
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          setReady(false);
+          return;
+        }
+        const data = await res.json();
+        setRarityName(typeof data.name === 'string' ? data.name : null);
+        setReady(true);
+      })
+      .catch(() => setReady(false));
+  }, []);
 
   const mint = async () => {
     const wallet = getStoredWallet();
@@ -31,31 +59,77 @@ export default function MintBadgePage() {
     setMsg(null);
 
     try {
-      const endpoint =
-        cluster === 'devnet'
-          ? clusterApiUrl('devnet')
-          : clusterApiUrl('mainnet-beta');
-      const connection = new Connection(endpoint, 'confirmed');
-      const payer = new PublicKey(wallet);
+      const origin =
+        process.env.NEXT_PUBLIC_WEB_APP_URL?.replace(/\/$/, '') ||
+        window.location.origin;
 
-      const metadataUri = getBadgeMetadataUri(window.location.origin, wallet);
-      const { transaction } = await buildFighterBadgeMintTransaction({
+      const metaRes = await fetch(
+        `${origin}/api/badge-metadata?wallet=${encodeURIComponent(wallet)}`,
+        { cache: 'no-store' }
+      );
+      const metaBody = await metaRes.json().catch(() => ({}));
+      if (!metaRes.ok) {
+        throw new Error(
+          metaBody.error || 'Scan your fighter in Wallet Wars before minting.'
+        );
+      }
+
+      const bhRes = await fetch('/api/solana/blockhash', { cache: 'no-store' });
+      const bhBody = await bhRes.json();
+      if (!bhRes.ok) {
+        throw new Error(bhBody.error || 'Could not fetch blockhash.');
+      }
+      const { blockhash, lastValidBlockHeight } = bhBody as {
+        blockhash: string;
+        lastValidBlockHeight: number;
+      };
+
+      // Endpoint only seeds Umi program registry — no browser RPC calls for blockhash.
+      const connection = new Connection(
+        cluster === 'mainnet-beta'
+          ? 'https://api.mainnet-beta.solana.com'
+          : 'https://api.devnet.solana.com',
+        'confirmed'
+      );
+      const payer = new PublicKey(wallet);
+      const metadataUri = getBadgeMetadataUri(origin, wallet);
+      const onChainName = String(metaBody.name || 'Glean Fighter Badge').slice(0, 32);
+
+      const { transaction, mint: mintPk } = await buildFighterBadgeMintTransaction({
         connection,
         payer,
         metadataUri,
+        name: onChainName,
+        blockhash,
+        lastValidBlockHeight,
       });
 
       const { signature } = await provider.signAndSendTransaction(transaction);
 
+      const confirmRes = await fetch('/api/claims/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signature, blockhash, lastValidBlockHeight }),
+      });
+      const confirmBody = await confirmRes.json().catch(() => ({}));
+      if (!confirmRes.ok) {
+        throw new Error(confirmBody.error || 'Transaction sent but confirmation failed.');
+      }
+
       const res = await fetch('/api/mint/fighter-badge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: tg, txSignature: signature }),
+        body: JSON.stringify({
+          telegramId: tg,
+          txSignature: signature,
+          mintAddress: mintPk.toBase58(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Verification failed');
 
       setMsg(data.detail || 'Badge minted!');
+      setReady(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Mint failed');
     } finally {
@@ -74,13 +148,26 @@ export default function MintBadgePage() {
 
       <CrtPanel label="MINT FIGHTER BADGE" tone="amber">
         <p className="mb-4 font-term text-sm">
-          Mint your official Glean Fighter Badge on {cluster}. Completing this quest boosts
-          POWER on your fighter card.
+          Mint your official Glean Fighter Badge NFT on {cluster}. Metaplex metadata embeds
+          your scanned stats. Completing this quest boosts POWER on your fighter card.
         </p>
+        {ready === false ? (
+          <p className="mb-4 font-term text-sm text-amber">
+            Scan your fighter in Wallet Wars first — badge metadata is built from your card.
+          </p>
+        ) : null}
+        {rarityName ? (
+          <p className="mb-3 font-term text-sm text-phosphor">{rarityName}</p>
+        ) : null}
         {error && <p className="mb-2 font-term text-magenta">{error}</p>}
         {msg && <p className="mb-2 font-term text-phosphor">{msg}</p>}
-        <button type="button" className="arcade-btn" disabled={busy} onClick={mint}>
-          {busy ? 'MINTING…' : 'MINT BADGE'}
+        <button
+          type="button"
+          className="arcade-btn"
+          disabled={busy || ready === false}
+          onClick={mint}
+        >
+          {busy ? 'MINTING…' : 'MINT BADGE NFT'}
         </button>
       </CrtPanel>
 
