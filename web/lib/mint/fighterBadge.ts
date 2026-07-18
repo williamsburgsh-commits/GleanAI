@@ -7,14 +7,14 @@ import {
 import { mplToolbox } from '@metaplex-foundation/mpl-toolbox';
 import {
   createNoopSigner,
+  generateSigner,
   percentAmount,
   signerIdentity,
-  type KeypairSigner,
 } from '@metaplex-foundation/umi';
 import {
-  fromWeb3JsKeypair,
   fromWeb3JsPublicKey,
   toWeb3JsInstruction,
+  toWeb3JsPublicKey,
 } from '@metaplex-foundation/umi-web3js-adapters';
 import { GLEAN_BADGE_NAME, GLEAN_BADGE_SYMBOL } from '@/lib/solana/programs';
 
@@ -42,13 +42,14 @@ export async function buildFighterBadgeMintTransaction(
   } = params;
   const name = (params.name || GLEAN_BADGE_NAME).slice(0, 32);
 
-  const mintKeypair = Keypair.generate();
   const umi = createUmi(connection.rpcEndpoint)
     .use(mplTokenMetadata())
     .use(mplToolbox())
     .use(signerIdentity(createNoopSigner(fromWeb3JsPublicKey(payer))));
 
-  const mintSigner = fromWeb3JsKeypair(mintKeypair) as KeypairSigner;
+  // Must be a full Umi KeypairSigner (generateSigner). fromWeb3JsKeypair alone
+  // fails isSigner() and CreateV1 then omits mint as a required signer.
+  const mintSigner = generateSigner(umi);
   const builder = createNft(umi, {
     mint: mintSigner,
     name,
@@ -59,6 +60,7 @@ export async function buildFighterBadgeMintTransaction(
     isMutable: true,
   });
 
+  const mintKeypair = Keypair.fromSecretKey(mintSigner.secretKey);
   const transaction = new Transaction({
     feePayer: payer,
     blockhash,
@@ -69,7 +71,7 @@ export async function buildFighterBadgeMintTransaction(
   }
   transaction.partialSign(mintKeypair);
 
-  return { transaction, mint: mintKeypair.publicKey };
+  return { transaction, mint: toWeb3JsPublicKey(mintSigner.publicKey) };
 }
 
 /** Absolute Metaplex JSON URI for a wallet's fighter badge. */
