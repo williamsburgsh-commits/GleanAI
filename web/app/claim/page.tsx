@@ -2,12 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import {
-  Connection,
-  PublicKey,
-  Transaction,
-  clusterApiUrl,
-} from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import { BrandMark } from '@/components/BrandMark';
 import { CrtPanel } from '@/components/CrtPanel';
 import { buildClaimIx, isClaimsConfigured } from '@/lib/claims/distributor';
@@ -104,13 +99,17 @@ function ClaimClient() {
         proof: data.leaf.proof,
       });
 
-      const cluster =
-        (process.env.NEXT_PUBLIC_SOLANA_CLUSTER as 'devnet' | 'mainnet-beta') || 'devnet';
-      const connection = new Connection(
-        process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(cluster),
-        'confirmed'
-      );
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      // Public Solana RPCs often 403 from the browser — fetch blockhash server-side.
+      const bhRes = await fetch('/api/claims/blockhash', { cache: 'no-store' });
+      const bhBody = await bhRes.json();
+      if (!bhRes.ok) {
+        throw new Error(bhBody.error || 'Could not fetch blockhash.');
+      }
+      const { blockhash, lastValidBlockHeight } = bhBody as {
+        blockhash: string;
+        lastValidBlockHeight: number;
+      };
+
       const tx = new Transaction({
         feePayer: claimant,
         blockhash,
@@ -118,7 +117,16 @@ function ClaimClient() {
       }).add(ix);
 
       const { signature: sig } = await provider.signAndSendTransaction(tx);
-      await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
+
+      const confirmRes = await fetch('/api/claims/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signature: sig, blockhash, lastValidBlockHeight }),
+      });
+      const confirmBody = await confirmRes.json().catch(() => ({}));
+      if (!confirmRes.ok) {
+        throw new Error(confirmBody.error || 'Transaction sent but confirmation failed.');
+      }
 
       await fetch('/api/claims/mark-claimed', {
         method: 'POST',
