@@ -31,6 +31,17 @@ function walletErrorMessage(err: unknown): string {
   if (e.code === 4001 || /reject|denied|cancel/i.test(raw)) {
     return 'Signature rejected in Phantom.';
   }
+  const lamports = raw.match(
+    /insufficient lamports\s+(\d+),\s*need\s+(\d+)/i
+  );
+  if (lamports) {
+    const have = (Number(lamports[1]) / 1e9).toFixed(4);
+    const need = (Number(lamports[2]) / 1e9).toFixed(4);
+    return `Not enough Devnet SOL for NFT rent. Wallet has ~${have} SOL; mint needs ~${need} SOL (plus a small fee). Airdrop more SOL in Phantom, then retry.`;
+  }
+  if (/insufficient lamports/i.test(raw)) {
+    return 'Not enough Devnet SOL to mint. Airdrop ~0.05 SOL in Phantom (Devnet), then retry.';
+  }
   return raw;
 }
 
@@ -103,14 +114,19 @@ export default function MintBadgePage() {
       if (!bhRes.ok) {
         throw new Error(bhBody.error || 'Could not fetch blockhash.');
       }
-      const { blockhash, lastValidBlockHeight } = bhBody as {
+      const { blockhash, lastValidBlockHeight, cluster: serverCluster } = bhBody as {
         blockhash: string;
         lastValidBlockHeight: number;
+        cluster?: string;
       };
+      const rpcCluster =
+        serverCluster === 'mainnet-beta' || serverCluster === 'mainnet'
+          ? 'mainnet-beta'
+          : 'devnet';
 
       // Endpoint only seeds Umi program registry — no browser RPC calls for blockhash.
       const connection = new Connection(
-        cluster === 'mainnet-beta'
+        rpcCluster === 'mainnet-beta'
           ? 'https://api.mainnet-beta.solana.com'
           : 'https://api.devnet.solana.com',
         'confirmed'
@@ -194,6 +210,10 @@ export default function MintBadgePage() {
         <p className="mb-4 font-term text-sm">
           Mint your official Glean Fighter Badge NFT on {cluster}. Metaplex metadata embeds
           your scanned stats. Completing this quest boosts POWER on your fighter card.
+        </p>
+        <p className="mb-4 font-term text-xs text-ash">
+          Needs ~0.02+ Devnet SOL for rent (metadata + mint accounts). Airdrop in Phantom if
+          your balance is low.
         </p>
         {ready === false ? (
           <p className="mb-4 font-term text-sm text-amber">

@@ -1,4 +1,4 @@
-import type { SolanaCluster } from './connection';
+﻿import type { SolanaCluster } from './connection';
 
 /** Normalize client/server cluster strings to an RPC cluster id. */
 export function normalizeCluster(raw?: string | null): SolanaCluster {
@@ -10,8 +10,12 @@ export function normalizeCluster(raw?: string | null): SolanaCluster {
   const envCluster = process.env.SOLANA_CLUSTER?.trim();
   if (envCluster) return normalizeCluster(envCluster);
 
-  // Production wallets are mainnet; devnet is for local hacking.
-  if (process.env.VERCEL_ENV === 'production') return 'mainnet-beta';
+  // Keep client + server aligned when only the public var is set (common on Vercel).
+  const publicCluster = process.env.NEXT_PUBLIC_SOLANA_CLUSTER?.trim();
+  if (publicCluster) return normalizeCluster(publicCluster);
+
+  // Default:devnet for current claims/fighter badge phase.
+  // Explicit SOLANA_CLUSTER=mainnet-beta required for mainnet cutover.
   return 'devnet';
 }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/solana/connection';
+import { normalizeCluster } from '@/lib/solana/cluster';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,13 +33,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const conn = getConnection();
+    const cluster = normalizeCluster(process.env.SOLANA_CLUSTER);
+    const conn = getConnection({ cluster });
     const signature = await conn.sendRawTransaction(raw, {
       skipPreflight: false,
       preflightCommitment: 'confirmed',
       maxRetries: 3,
     });
-    return NextResponse.json({ signature });
+    return NextResponse.json({ signature, cluster });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : 'Could not broadcast transaction.';
