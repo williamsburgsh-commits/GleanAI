@@ -22,6 +22,7 @@ import {
   thawDelegatedAccount,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
+  createNoopSigner,
   createSignerFromKeypair,
   signerIdentity,
 } from '@metaplex-foundation/umi';
@@ -32,7 +33,7 @@ import {
 } from '@metaplex-foundation/umi-web3js-adapters';
 import bs58 from 'bs58';
 
-export type StakeMode = 'owner_freeze' | 'delegate_freeze';
+export type StakeMode = 'owner_freeze' | 'metaplex_delegate';
 
 export interface StakeBuildResult {
   transaction: Transaction;
@@ -81,6 +82,11 @@ export async function isBadgeTokenFrozen(
   }
 }
 
+/**
+ * Metaplex createNft sets freeze authority to the Master Edition PDA — not the
+ * wallet. Stake via Approve + FreezeDelegatedAccount (Token Metadata).
+ * Prefer the user as delegate so no STAKING_AUTHORITY secret is required.
+ */
 async function resolveMode(
   connection: Connection,
   mint: PublicKey,
@@ -96,13 +102,74 @@ async function resolveMode(
   if (freezeAuthority.equals(owner)) {
     return { mode: 'owner_freeze', freezeAuthority };
   }
-  const stakingAuth = getStakingAuthorityPubkey();
-  if (stakingAuth && freezeAuthority.equals(stakingAuth)) {
-    return { mode: 'delegate_freeze', freezeAuthority };
+  // Master Edition (or other) freeze authority → Metaplex freezeDelegatedAccount path.
+  return { mode: 'metaplex_delegate', freezeAuthority };
+}
+
+function appendMetaplexFreezeIxs(params: {
+  connection: Connection;
+  transaction: Transaction;
+  owner: PublicKey;
+  mint: PublicKey;
+  ata: PublicKey;
+  thaw: boolean;
+}): { needsAuthoritySignature: boolean } {
+  const { connection, transaction, owner, mint, ata, thaw } = params;
+
+  // Optional server key; default: user is delegate (signs with Phantom only).
+  const authorityKp = getStakingAuthorityKeypair();
+  const delegatePk = authorityKp?.publicKey ?? owner;
+
+  if (!thaw) {
+    transaction.add(createApproveInstruction(ata, delegatePk, owner, 1));
   }
-  throw new Error(
-    `Freeze authority ${freezeAuthority.toBase58().slice(0, 8)}… is not your wallet or STAKING_AUTHORITY.`
-  );
+
+  const umi = createUmi(connection.rpcEndpoint).use(mplTokenMetadata());
+  if (authorityKp) {
+    const authSigner = createSignerFromKeypair(umi, fromWeb3JsKeypair(authorityKp));
+    umi.use(signerIdentity(authSigner));
+    const builder = thaw
+      ? thawDelegatedAccount(umi, {
+          delegate: authSigner,
+          tokenAccount: fromWeb3JsPublicKey(ata),
+          mint: fromWeb3JsPublicKey(mint),
+        })
+      : freezeDelegatedAccount(umi, {
+          delegate: authSigner,
+          tokenAccount: fromWeb3JsPublicKey(ata),
+          mint: fromWeb3JsPublicKey(mint),
+        });
+    for (const ix of builder.getInstructions()) {
+      transaction.add(toWeb3JsInstruction(ix));
+    }
+    if (thaw) {
+      transaction.add(createRevokeInstruction(ata, owner));
+    }
+    transaction.partialSign(authorityKp);
+    return { needsAuthoritySignature: true };
+  }
+
+  // Owner-as-delegate: Phantom signs Approve + Freeze/ThawDelegatedAccount.
+  const ownerSigner = createNoopSigner(fromWeb3JsPublicKey(owner));
+  umi.use(signerIdentity(ownerSigner));
+  const builder = thaw
+    ? thawDelegatedAccount(umi, {
+        delegate: ownerSigner,
+        tokenAccount: fromWeb3JsPublicKey(ata),
+        mint: fromWeb3JsPublicKey(mint),
+      })
+    : freezeDelegatedAccount(umi, {
+        delegate: ownerSigner,
+        tokenAccount: fromWeb3JsPublicKey(ata),
+        mint: fromWeb3JsPublicKey(mint),
+      });
+  for (const ix of builder.getInstructions()) {
+    transaction.add(toWeb3JsInstruction(ix));
+  }
+  if (thaw) {
+    transaction.add(createRevokeInstruction(ata, owner));
+  }
+  return { needsAuthoritySignature: false };
 }
 
 export async function buildStakeTransaction(params: {
@@ -119,7 +186,7 @@ export async function buildStakeTransaction(params: {
     throw new Error('Badge is already frozen (staked).');
   }
 
-  const { mode, freezeAuthority } = await resolveMode(connection, mint, owner);
+  const { mode } = await resolveMode(connection, mint, owner);
   const transaction = new Transaction({
     feePayer: owner,
     blockhash,
@@ -137,33 +204,21 @@ export async function buildStakeTransaction(params: {
     };
   }
 
-  const authorityKp = getStakingAuthorityKeypair();
-  if (!authorityKp) {
-    throw new Error('STAKING_AUTHORITY secret is required for delegate freeze.');
-  }
-
-  transaction.add(createApproveInstruction(ata, freezeAuthority, owner, 1));
-
-  const umi = createUmi(connection.rpcEndpoint).use(mplTokenMetadata());
-  const authSigner = createSignerFromKeypair(umi, fromWeb3JsKeypair(authorityKp));
-  umi.use(signerIdentity(authSigner));
-
-  const builder = freezeDelegatedAccount(umi, {
-    delegate: authSigner,
-    tokenAccount: fromWeb3JsPublicKey(ata),
-    mint: fromWeb3JsPublicKey(mint),
+  const { needsAuthoritySignature } = appendMetaplexFreezeIxs({
+    connection,
+    transaction,
+    owner,
+    mint,
+    ata,
+    thaw: false,
   });
-  for (const ix of builder.getInstructions()) {
-    transaction.add(toWeb3JsInstruction(ix));
-  }
-  transaction.partialSign(authorityKp);
 
   return {
     transaction,
     mint: mint.toBase58(),
     tokenAccount: ata.toBase58(),
     mode,
-    needsAuthoritySignature: true,
+    needsAuthoritySignature,
   };
 }
 
@@ -199,32 +254,21 @@ export async function buildUnstakeTransaction(params: {
     };
   }
 
-  const authorityKp = getStakingAuthorityKeypair();
-  if (!authorityKp) {
-    throw new Error('STAKING_AUTHORITY secret is required for delegate thaw.');
-  }
-
-  const umi = createUmi(connection.rpcEndpoint).use(mplTokenMetadata());
-  const authSigner = createSignerFromKeypair(umi, fromWeb3JsKeypair(authorityKp));
-  umi.use(signerIdentity(authSigner));
-
-  const builder = thawDelegatedAccount(umi, {
-    delegate: authSigner,
-    tokenAccount: fromWeb3JsPublicKey(ata),
-    mint: fromWeb3JsPublicKey(mint),
+  const { needsAuthoritySignature } = appendMetaplexFreezeIxs({
+    connection,
+    transaction,
+    owner,
+    mint,
+    ata,
+    thaw: true,
   });
-  for (const ix of builder.getInstructions()) {
-    transaction.add(toWeb3JsInstruction(ix));
-  }
-  transaction.add(createRevokeInstruction(ata, owner));
-  transaction.partialSign(authorityKp);
 
   return {
     transaction,
     mint: mint.toBase58(),
     tokenAccount: ata.toBase58(),
     mode,
-    needsAuthoritySignature: true,
+    needsAuthoritySignature,
   };
 }
 
