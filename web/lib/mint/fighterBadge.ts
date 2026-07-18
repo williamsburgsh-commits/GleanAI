@@ -40,7 +40,8 @@ export async function buildFighterBadgeMintTransaction(
     blockhash,
     lastValidBlockHeight,
   } = params;
-  const name = (params.name || GLEAN_BADGE_NAME).slice(0, 32);
+  // Metaplex on-chain name limit is 32 UTF-8 bytes (not JS string length).
+  const name = truncateUtf8(params.name || GLEAN_BADGE_NAME, 32);
 
   const umi = createUmi(connection.rpcEndpoint)
     .use(mplTokenMetadata())
@@ -78,4 +79,16 @@ export async function buildFighterBadgeMintTransaction(
 export function getBadgeMetadataUri(origin: string, walletAddress: string): string {
   const base = origin.replace(/\/$/, '');
   return `${base}/api/badge-metadata?wallet=${encodeURIComponent(walletAddress)}`;
+}
+
+function truncateUtf8(value: string, maxBytes: number): string {
+  const encoder = new TextEncoder();
+  if (encoder.encode(value).length <= maxBytes) return value;
+  let out = '';
+  for (const char of value) {
+    const next = out + char;
+    if (encoder.encode(next).length > maxBytes) break;
+    out = next;
+  }
+  return out || GLEAN_BADGE_NAME.slice(0, maxBytes);
 }

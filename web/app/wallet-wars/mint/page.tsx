@@ -9,6 +9,30 @@ import { getPhantomProvider, getStoredWallet, getTelegramId } from '@/lib/phanto
 import { getPublicConfig } from '@/lib/config';
 import { buildFighterBadgeMintTransaction, getBadgeMetadataUri } from '@/lib/mint/fighterBadge';
 import { PixelArrowLeft } from '@/components/PixelArt';
+import { GLEAN_BADGE_NAME } from '@/lib/solana/programs';
+
+function walletErrorMessage(err: unknown): string {
+  if (!err) return 'Mint failed.';
+  if (typeof err === 'string') return err;
+  const e = err as {
+    message?: string;
+    code?: number;
+    error?: { message?: string };
+    data?: { message?: string };
+  };
+  const raw =
+    e.message ||
+    e.error?.message ||
+    e.data?.message ||
+    (err instanceof Error ? err.message : '');
+  if (!raw || /^unexpected error$/i.test(raw.trim())) {
+    return 'Phantom failed to sign or send. Confirm Devnet + enough SOL, then try again.';
+  }
+  if (e.code === 4001 || /reject|denied|cancel/i.test(raw)) {
+    return 'Signature rejected in Phantom.';
+  }
+  return raw;
+}
 
 export default function MintBadgePage() {
   const { inTelegram } = useTelegram();
@@ -93,7 +117,8 @@ export default function MintBadgePage() {
       );
       const payer = new PublicKey(wallet);
       const metadataUri = getBadgeMetadataUri(origin, wallet);
-      const onChainName = String(metaBody.name || 'Glean Fighter Badge').slice(0, 32);
+      // Keep on-chain name short; full rarity name lives in off-chain JSON.
+      const onChainName = GLEAN_BADGE_NAME;
 
       const { transaction, mint: mintPk } = await buildFighterBadgeMintTransaction({
         connection,
@@ -104,7 +129,26 @@ export default function MintBadgePage() {
         lastValidBlockHeight,
       });
 
-      const { signature } = await provider.signAndSendTransaction(transaction);
+      // Multi-signer mint: Phantom signs only; Alchemy broadcasts (avoids public RPC 403 / Unexpected error).
+      if (typeof provider.signTransaction !== 'function') {
+        throw new Error('Phantom signTransaction is unavailable. Update Phantom and retry.');
+      }
+      const signed = await provider.signTransaction(transaction);
+      const serialized = signed.serialize();
+      let binary = '';
+      for (let i = 0; i < serialized.length; i += 1) {
+        binary += String.fromCharCode(serialized[i]!);
+      }
+      const sendRes = await fetch('/api/solana/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transaction: btoa(binary) }),
+      });
+      const sendBody = await sendRes.json().catch(() => ({}));
+      if (!sendRes.ok) {
+        throw new Error(sendBody.error || 'Could not broadcast mint transaction.');
+      }
+      const signature = String(sendBody.signature);
 
       const confirmRes = await fetch('/api/claims/confirm', {
         method: 'POST',
@@ -131,7 +175,7 @@ export default function MintBadgePage() {
       setMsg(data.detail || 'Badge minted!');
       setReady(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Mint failed');
+      setError(walletErrorMessage(e));
     } finally {
       setBusy(false);
     }
