@@ -8,7 +8,6 @@ export interface FighterTraits {
   rarity: FighterRarity;
   aura: FighterRarity;
   powerBand: StatBand;
-  body: FighterRarity;
   armor: StatBand;
   shield: StatBand;
   weapon: StatBand;
@@ -42,7 +41,6 @@ export function buildFighterTraits(stats: BaseStats, rarity: FighterRarity): Fig
     rarity,
     aura: rarity,
     powerBand: statBand(stats.power),
-    body: rarity,
     armor: statBand(stats.armor),
     shield: statBand(stats.shield),
     weapon: statBand(stats.strike),
@@ -52,8 +50,6 @@ export function buildFighterTraits(stats: BaseStats, rarity: FighterRarity): Fig
 }
 
 const C = {
-  void: '#06080d',
-  screen: '#0d1219',
   bone: '#e7ece5',
   phosphor: '#27ff7d',
   cyan: '#2bd9ff',
@@ -61,9 +57,9 @@ const C = {
   magenta: '#ff3da6',
   purple: '#a855f7',
   zinc: '#71717a',
-  skin: '#c4a574',
   dark: '#1b2130',
   red: '#ef4444',
+  screen: '#0d1219',
 };
 
 function cells(...list: Cell[]): Cell[] {
@@ -80,6 +76,7 @@ function fillRect(x0: number, y0: number, w: number, h: number, color: string): 
   return out;
 }
 
+/** Rarity border sparks only — transparent interior. */
 function auraLayer(rarity: FighterRarity, powerBand: StatBand): Cell[] {
   const color =
     rarity === 'legendary'
@@ -90,7 +87,7 @@ function auraLayer(rarity: FighterRarity, powerBand: StatBand): Cell[] {
           ? C.cyan
           : C.zinc;
   const intensity = powerBand === 'high' ? 3 : powerBand === 'mid' ? 2 : 1;
-  const out: Cell[] = [...fillRect(0, 0, 32, 32, C.void)];
+  const out: Cell[] = [];
   for (let i = 0; i < intensity; i += 1) {
     const inset = 1 + i;
     for (let x = inset; x < 32 - inset; x += 1) {
@@ -105,51 +102,6 @@ function auraLayer(rarity: FighterRarity, powerBand: StatBand): Cell[] {
   if (powerBand === 'high') {
     out.push(...cells([4, 4, color], [27, 4, color], [4, 27, color], [27, 27, color]));
   }
-  return out;
-}
-
-function bodyLayer(rarity: FighterRarity): Cell[] {
-  const suit =
-    rarity === 'legendary'
-      ? C.amber
-      : rarity === 'epic'
-        ? C.magenta
-        : rarity === 'rare'
-          ? C.cyan
-          : C.zinc;
-  const out: Cell[] = [];
-  // torso
-  out.push(...fillRect(11, 14, 10, 10, suit));
-  out.push(...fillRect(12, 15, 8, 8, C.dark));
-  // head
-  out.push(...fillRect(12, 6, 8, 8, C.skin));
-  out.push(...fillRect(13, 7, 6, 6, C.skin));
-  // helmet / visor by rarity
-  if (rarity === 'common') {
-    out.push(...fillRect(12, 5, 8, 2, C.zinc));
-  } else if (rarity === 'rare') {
-    out.push(...fillRect(11, 5, 10, 3, C.cyan));
-    out.push(...fillRect(13, 8, 2, 2, C.void));
-    out.push(...fillRect(17, 8, 2, 2, C.void));
-  } else if (rarity === 'epic') {
-    out.push(...fillRect(11, 4, 10, 4, C.purple));
-    out.push(...fillRect(13, 8, 2, 2, C.phosphor));
-    out.push(...fillRect(17, 8, 2, 2, C.phosphor));
-  } else {
-    out.push(...fillRect(10, 3, 12, 5, C.amber));
-    out.push(...fillRect(13, 8, 2, 2, C.cyan));
-    out.push(...fillRect(17, 8, 2, 2, C.cyan));
-    out.push(...fillRect(14, 11, 4, 1, C.bone));
-  }
-  // eyes default
-  if (rarity === 'common') {
-    out.push(...cells([14, 9, C.void], [17, 9, C.void]));
-  }
-  // mouth
-  out.push(...fillRect(14, 12, 4, 1, C.dark));
-  // arms stubs
-  out.push(...fillRect(8, 16, 3, 6, suit));
-  out.push(...fillRect(21, 16, 3, 6, suit));
   return out;
 }
 
@@ -267,10 +219,9 @@ function powerAccent(band: StatBand, dominant: StatKey): Cell[] {
   );
 }
 
-function buildPixelMap(traits: FighterTraits): Map<string, string> {
+function buildGearPixelMap(traits: FighterTraits): Map<string, string> {
   const layers: Cell[] = [
     ...auraLayer(traits.aura, traits.powerBand),
-    ...bodyLayer(traits.body),
     ...armorLayer(traits.armor, traits.dominant),
     ...bootsLayer(traits.boots, traits.dominant),
     ...shieldLayer(traits.shield, traits.dominant),
@@ -286,63 +237,13 @@ function buildPixelMap(traits: FighterTraits): Map<string, string> {
   return map;
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '');
-  return [
-    parseInt(h.slice(0, 2), 16),
-    parseInt(h.slice(2, 4), 16),
-    parseInt(h.slice(4, 6), 16),
-  ];
-}
-
-/** 32×32 RGBA buffer (row-major). */
-export function composeFighterRgba(traits: FighterTraits): Buffer {
-  const map = buildPixelMap(traits);
-  const buf = Buffer.alloc(32 * 32 * 4);
-  for (let y = 0; y < 32; y += 1) {
-    for (let x = 0; x < 32; x += 1) {
-      const fill = map.get(`${x},${y}`) ?? C.void;
-      const [r, g, b] = hexToRgb(fill);
-      const i = (y * 32 + x) * 4;
-      buf[i] = r;
-      buf[i + 1] = g;
-      buf[i + 2] = b;
-      buf[i + 3] = 255;
-    }
-  }
-  return buf;
-}
-
-/** Nearest-neighbor scale RGBA to size×size. */
-export function scaleRgbaNearest(src: Buffer, srcSize: number, dstSize: number): Buffer {
-  const out = Buffer.alloc(dstSize * dstSize * 4);
-  for (let y = 0; y < dstSize; y += 1) {
-    const sy = Math.floor((y * srcSize) / dstSize);
-    for (let x = 0; x < dstSize; x += 1) {
-      const sx = Math.floor((x * srcSize) / dstSize);
-      const si = (sy * srcSize + sx) * 4;
-      const di = (y * dstSize + x) * 4;
-      out[di] = src[si]!;
-      out[di + 1] = src[si + 1]!;
-      out[di + 2] = src[si + 2]!;
-      out[di + 3] = src[si + 3]!;
-    }
-  }
-  return out;
-}
-
-export function composeFighterSvg(traits: FighterTraits): string {
-  const map = buildPixelMap(traits);
-  const rects: string[] = [];
+/** Pixel cells for a transparent gear overlay on DiceBear portraits. */
+export function getGearOverlayCells(traits: FighterTraits): Cell[] {
+  const map = buildGearPixelMap(traits);
+  const cells: Cell[] = [];
   for (const [key, fill] of map) {
     const [xs, ys] = key.split(',');
-    rects.push(`<rect x="${xs}" y="${ys}" width="1" height="1" fill="${fill}"/>`);
+    cells.push([Number(xs), Number(ys), fill]);
   }
-
-  return (
-    `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" shape-rendering="crispEdges">` +
-    rects.join('') +
-    `</svg>`
-  );
+  return cells;
 }

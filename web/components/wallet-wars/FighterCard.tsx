@@ -12,6 +12,7 @@ import { STAT_KEYS, type StatKey } from '@/lib/wallet-wars/fighterStats';
 import type { QuestBonus } from '@/lib/wallet-wars/questBoosts';
 import { shortenWallet } from '@/lib/format';
 import { isKolWallet } from '@/lib/wallet-wars/kolRegistry';
+import { FighterPortrait } from './FighterPortrait';
 
 export interface FighterCardData {
   name: string;
@@ -136,12 +137,16 @@ export function FighterCard({
 
       {/* Art window — dominates card height */}
       <div className={`fighter-card-art ${isBattle || isMini ? 'mt-1' : 'mt-1.5'}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={fighter.avatarUrl}
-          alt=""
-          className={`h-full w-full object-cover ${worried ? 'opacity-70 grayscale-[30%]' : ''}`}
-          style={{ imageRendering: 'pixelated' }}
+        <FighterPortrait
+          avatarUrl={fighter.avatarUrl}
+          walletAddress={fighter.walletAddress}
+          strike={fighter.strike}
+          shield={fighter.shield}
+          power={fighter.power}
+          armor={fighter.armor}
+          agility={fighter.agility}
+          rarity={fighter.rarity}
+          worried={worried}
         />
         {variant === 'battle' && !worried && !shattered && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden font-pixel text-[6px] text-phosphor battle-victory-pose">

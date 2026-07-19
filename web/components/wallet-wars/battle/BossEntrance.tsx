@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { FighterCardData } from '../FighterCard';
+import { FighterPortrait } from '../FighterPortrait';
 
 export interface BossMeta {
   name: string;
@@ -95,12 +96,15 @@ export function BossEntrance({ active, boss, opponent, onComplete }: BossEntranc
           <p className="font-pixel text-lg text-amber glow-amber">{boss.name}</p>
           <p className="mt-1 font-term text-sm text-bone/80">{boss.title}</p>
           <div className="boss-entrance-card mx-auto mt-4 h-28 w-28 overflow-hidden border-2 border-magenta/60 bg-[#0d1219]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={opponent.avatarUrl}
-              alt=""
-              className="h-full w-full object-cover"
-              style={{ imageRendering: 'pixelated' }}
+            <FighterPortrait
+              avatarUrl={opponent.avatarUrl}
+              walletAddress={opponent.walletAddress}
+              strike={opponent.strike}
+              shield={opponent.shield}
+              power={opponent.power}
+              armor={opponent.armor}
+              agility={opponent.agility}
+              rarity={opponent.rarity}
             />
           </div>
         </div>

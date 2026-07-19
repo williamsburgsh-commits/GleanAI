@@ -4,6 +4,7 @@ import type { BattleResolution } from '@/lib/wallet-wars/battleResolver';
 import type { FighterCardData } from '../FighterCard';
 import { STAT_LABELS, type StatKey } from '@/lib/wallet-wars/fighterStats';
 import { getLevelTitle } from '@/lib/levels';
+import { FighterPortrait } from '../FighterPortrait';
 
 interface BattleRecapCardProps {
   challenger: FighterCardData;
@@ -49,12 +50,16 @@ export function BattleRecapCard({
           <p className="w-full truncate text-center font-pixel text-[8px] text-phosphor">
             {challenger.name}
           </p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={challenger.avatarUrl}
-            alt=""
-            className="h-14 w-14 shrink-0 border-2 border-bone/30 bg-void object-cover"
-            style={{ imageRendering: 'pixelated' }}
+          <FighterPortrait
+            avatarUrl={challenger.avatarUrl}
+            walletAddress={challenger.walletAddress}
+            strike={challenger.strike}
+            shield={challenger.shield}
+            power={challenger.power}
+            armor={challenger.armor}
+            agility={challenger.agility}
+            rarity={challenger.rarity}
+            className="h-14 w-14 shrink-0 border-2 border-bone/30 bg-void"
           />
         </div>
         <span className="pb-5 font-pixel text-[8px] text-ash">vs</span>
@@ -62,12 +67,16 @@ export function BattleRecapCard({
           <p className="w-full truncate text-center font-pixel text-[8px] text-magenta">
             {opponent.name}
           </p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={opponent.avatarUrl}
-            alt=""
-            className="h-14 w-14 shrink-0 border-2 border-bone/30 bg-void object-cover"
-            style={{ imageRendering: 'pixelated' }}
+          <FighterPortrait
+            avatarUrl={opponent.avatarUrl}
+            walletAddress={opponent.walletAddress}
+            strike={opponent.strike}
+            shield={opponent.shield}
+            power={opponent.power}
+            armor={opponent.armor}
+            agility={opponent.agility}
+            rarity={opponent.rarity}
+            className="h-14 w-14 shrink-0 border-2 border-bone/30 bg-void"
           />
         </div>
       </div>

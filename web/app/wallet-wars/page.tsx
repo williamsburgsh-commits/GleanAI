@@ -48,12 +48,19 @@ export default function WalletWarsPage() {
   const loadFighter = useCallback(async (tg: string) => {
     const res = await fetch(`/api/fighter?telegramId=${tg}`);
     const data = await res.json();
+    if (res.status === 404) {
+      setWalletLinked(false);
+      setFighter(null);
+      return;
+    }
     if (!res.ok) throw new Error(data.error || 'Failed to load fighter');
     setWalletLinked(Boolean(data.walletLinked));
     if (data.fighter) {
       setFighter(data.fighter);
       setCanRescan(data.fighter.canRescan);
       setNextRescanAt(data.fighter.nextRescanAt);
+    } else {
+      setFighter(null);
     }
   }, []);
 

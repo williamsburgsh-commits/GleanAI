@@ -87,7 +87,7 @@ export function createBotFighter(
 
   return {
     name: BOT_NAMES[nameIdx] ?? 'Bot Fighter',
-    avatarUrl: botAvatarUrl({ ...stats, rarity }),
+    avatarUrl: botAvatarUrl(botSeed),
     stats,
     totalScore: total,
     rarity,
