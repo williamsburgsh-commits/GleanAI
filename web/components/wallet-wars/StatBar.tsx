@@ -36,27 +36,33 @@ export function StatBar({
         ? 'bg-red-600 opacity-50 battle-stat-lose'
         : 'bg-cyan';
 
-  const textSize = animate ? 'text-[6px]' : 'text-[8px]';
+  const textSize = animate ? 'text-[5px]' : 'text-[7px]';
+  const gridCols = animate
+    ? 'grid-cols-[2.5rem_1fr_1.25rem]'
+    : 'grid-cols-[3.25rem_1fr_1.5rem]';
+  const gapX = animate ? 'gap-x-1' : 'gap-x-1.5';
+  const barGap = animate ? 'gap-px' : 'gap-[2px]';
+  const barH = animate ? 'h-[3px]' : 'h-[var(--px)]';
 
   return (
     <div
-      className={`grid w-full grid-cols-[3.75rem_1fr_1.75rem] items-center gap-x-1.5 transition-all duration-200 ${
+      className={`grid w-full items-center transition-all duration-200 ${gridCols} ${gapX} ${
         active ? 'battle-stat-active' : ''
       } ${deciding ? 'battle-stat-deciding' : ''}`}
       data-stat={stat}
     >
       <span
-        className={`font-pixel uppercase tracking-wide text-bone/80 ${textSize} ${
+        className={`truncate font-pixel uppercase tracking-wide text-bone/80 ${textSize} ${
           active ? 'text-phosphor animate-blink' : ''
         }`}
       >
         {STAT_LABELS[stat]}
       </span>
-      <div className={`flex min-w-0 ${animate ? 'gap-[2px]' : 'gap-[3px]'}`}>
+      <div className={`flex min-w-0 ${barGap}`}>
         {Array.from({ length: segments }).map((_, i) => (
           <div
             key={i}
-            className={`h-[var(--px)] flex-1 border border-void/80 ${
+            className={`${barH} flex-1 border border-void/80 ${
               revealed && i < filled ? highlightClass : 'bg-void/60'
             }`}
             style={{ imageRendering: 'pixelated' }}

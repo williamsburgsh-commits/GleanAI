@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { PublicKey } from '@solana/web3.js';
 import { getServiceClient } from '@/lib/supabaseServer';
 import { generateReferralCode } from '@/lib/referral';
+import {
+  addWebhookAddresses,
+  removeWebhookAddresses,
+} from '@/lib/helius/addresses.server';
 
 export const runtime = 'nodejs';
 
@@ -156,6 +160,9 @@ export async function POST(request: Request) {
       }
     }
 
+    // Best-effort: watch this wallet for auto quest completion.
+    void addWebhookAddresses([walletAddress]);
+
     return NextResponse.json({ ok: true, walletAddress });
   } catch (err) {
     console.error('[api/wallet] supabase error', err);
@@ -206,11 +213,15 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ ok: true, unlinked: false });
     }
 
+    const previousWallet = user.wallet_address as string;
+
     const { error: updateErr } = await supabase
       .from('users')
       .update({ wallet_address: null })
       .eq('id', user.id);
     if (updateErr) throw updateErr;
+
+    void removeWebhookAddresses([previousWallet]);
 
     return NextResponse.json({ ok: true, unlinked: true });
   } catch (err) {

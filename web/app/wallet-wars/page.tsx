@@ -36,7 +36,7 @@ export default function WalletWarsPage() {
   const [history, setHistory] = useState<BattleHistoryRow[]>([]);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [selectedTaunt, setSelectedTaunt] = useState(TAUNT_PRESETS[0]);
+  const [selectedTaunt, setSelectedTaunt] = useState<string | null>(null);
   const [completedQuests, setCompletedQuests] = useState<Set<string>>(new Set());
   const [gauntletProgress, setGauntletProgress] = useState<{
     defeatedCount: number;
@@ -317,15 +317,20 @@ export default function WalletWarsPage() {
 
           <CrtPanel label="BATTLE" tone="phosphor" className="mb-4">
             <p className="mb-2 font-term text-sm">Pick a taunt (optional):</p>
-            <div className="mb-3 flex flex-wrap gap-1">
+            <div className="mb-4 grid gap-2">
               {TAUNT_PRESETS.map((t) => (
                 <button
                   key={t}
                   type="button"
-                  className={`chip-btn text-[8px] ${selectedTaunt === t ? 'chip-btn-amber' : ''}`}
-                  onClick={() => setSelectedTaunt(t)}
+                  className={`w-full px-3 py-2.5 text-left font-term text-base leading-snug ${
+                    selectedTaunt === t ? 'chip-btn-amber' : 'chip-btn'
+                  }`}
+                  onClick={() =>
+                    setSelectedTaunt((prev) => (prev === t ? null : t))
+                  }
+                  aria-pressed={selectedTaunt === t}
                 >
-                  {t.slice(0, 22)}…
+                  {t}
                 </button>
               ))}
             </div>
@@ -335,7 +340,7 @@ export default function WalletWarsPage() {
                 <button
                   key={d}
                   type="button"
-                  className="arcade-btn-cyan text-[10px]"
+                  className="arcade-btn-cyan w-full"
                   disabled={busy !== null}
                   onClick={() => startBotBattle(d)}
                 >
@@ -343,10 +348,10 @@ export default function WalletWarsPage() {
                 </button>
               ))}
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <button
                 type="button"
-                className="arcade-btn"
+                className="arcade-btn w-full"
                 disabled={busy !== null}
                 onClick={startMatch}
               >
@@ -354,7 +359,7 @@ export default function WalletWarsPage() {
               </button>
               <button
                 type="button"
-                className="chip-btn-magenta"
+                className="arcade-btn-magenta w-full"
                 disabled={busy !== null}
                 onClick={createInvite}
               >

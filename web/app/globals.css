@@ -221,6 +221,21 @@
   .arcade-btn-cyan:hover { background: #0a2b38; }
   .arcade-btn-cyan:active { transform: translateY(4px); box-shadow: 0 1px 0 0 #04161d, 0 2px 0 0 rgba(0,0,0,0.6); }
 
+  /* magenta arcade button (challenge / invite) */
+  .arcade-btn-magenta {
+    @apply arcade-btn;
+    background: #1a0712;
+    color: #ff3da6;
+    border-color: #ff3da6;
+    box-shadow: 0 5px 0 0 #12040c, 0 6px 0 0 rgba(0, 0, 0, 0.6);
+    text-shadow: 0 0 5px rgba(255, 61, 166, 0.4);
+  }
+  .arcade-btn-magenta:hover { background: #2a0e1f; }
+  .arcade-btn-magenta:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 0 #12040c, 0 2px 0 0 rgba(0, 0, 0, 0.6);
+  }
+
   /* Training Grounds — pixel gym bars */
   .training-gym {
     position: relative;
@@ -360,6 +375,11 @@
     border-radius: 0;
   }
 
+  @keyframes holoShimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
   .animate-holo-shimmer {
     background: linear-gradient(
       115deg,
@@ -370,6 +390,114 @@
       transparent 70%
     );
     background-size: 200% 200%;
+    animation: holoShimmer 3s linear infinite;
+  }
+
+  .animate-holo-shimmer-epic {
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(168, 85, 247, 0.35) 45%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(192, 132, 252, 0.3) 55%,
+      transparent 70%
+    );
+    background-size: 200% 200%;
+    animation: holoShimmer 3s linear infinite;
+  }
+
+  /* Arcade TCG fighter card chrome */
+  .fighter-card-frame {
+    position: relative;
+    border-style: solid;
+    border-width: 4px;
+    box-shadow:
+      inset 0 0 0 2px rgba(232, 228, 214, 0.12),
+      inset 0 2px 0 0 rgba(255, 255, 255, 0.06),
+      inset 0 -2px 0 0 rgba(0, 0, 0, 0.45);
+  }
+  .fighter-card-frame::before,
+  .fighter-card-frame::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    pointer-events: none;
+    z-index: 2;
+    border-color: rgba(232, 228, 214, 0.55);
+    border-style: solid;
+  }
+  .fighter-card-frame::before {
+    top: 4px;
+    left: 4px;
+    border-width: 2px 0 0 2px;
+  }
+  .fighter-card-frame::after {
+    top: 4px;
+    right: 4px;
+    border-width: 2px 2px 0 0;
+  }
+  .fighter-card-corners {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .fighter-card-corners::before,
+  .fighter-card-corners::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: rgba(232, 228, 214, 0.55);
+    border-style: solid;
+  }
+  .fighter-card-corners::before {
+    bottom: 4px;
+    left: 4px;
+    border-width: 0 0 2px 2px;
+  }
+  .fighter-card-corners::after {
+    bottom: 4px;
+    right: 4px;
+    border-width: 0 2px 2px 0;
+  }
+
+  .fighter-card-art {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    border: 2px solid rgba(232, 228, 214, 0.28);
+    background: #05070c;
+  }
+  .fighter-card-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.22) 3px,
+      rgba(0, 0, 0, 0) 4px
+    );
+    mix-blend-mode: multiply;
+  }
+
+  .fighter-card-plate {
+    flex-shrink: 0;
+    margin-top: 0.35rem;
+    padding: 0.35rem 0.3rem 0.25rem;
+    border: 2px solid rgba(232, 228, 214, 0.18);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.65) 100%);
+  }
+
+  .fighter-card-pwr {
+    font-family: var(--font-pixel), monospace;
+    color: #ffb84d;
+    text-shadow: 0 0 6px rgba(255, 184, 77, 0.45);
+    letter-spacing: 0.04em;
   }
 
   @keyframes shatter {

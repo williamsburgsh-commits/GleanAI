@@ -10,10 +10,18 @@ const MOCK: { rarity: FighterRarity; score: number }[] = [
   { rarity: 'legendary', score: 450 },
 ];
 
+const MOCK_WALLETS: Record<FighterRarity, string> = {
+  common: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+  rare: 'DYw8jCTfwHKgo31oYAhVnXJSDpbD5jBkheTqA83TZRuJo',
+  epic: 'HN7cABqLq46Es1jh92dQQodLSzemdN1N4TdZ4wfYHqSa',
+  legendary: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYnASUT',
+};
+
 function mockFighter(rarity: FighterRarity, score: number): FighterCardData {
   const q = Math.floor(score / 5);
   return {
     name: 'Demo…Fighter',
+    walletAddress: MOCK_WALLETS[rarity],
     avatarUrl: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${rarity}`,
     strike: q,
     shield: q,

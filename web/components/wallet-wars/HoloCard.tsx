@@ -28,7 +28,11 @@ export function HoloCard({ rarity, children, className = '' }: HoloCardProps) {
     ref.current.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg)';
   }, []);
 
-  const holo = rarity === 'legendary';
+  const showShimmer = rarity === 'legendary' || rarity === 'epic';
+  const shimmerClass =
+    rarity === 'legendary'
+      ? 'animate-holo-shimmer opacity-45'
+      : 'animate-holo-shimmer-epic opacity-35';
 
   return (
     <div
@@ -37,9 +41,9 @@ export function HoloCard({ rarity, children, className = '' }: HoloCardProps) {
       onPointerMove={onMove}
       onPointerLeave={onLeave}
     >
-      {holo && (
+      {showShimmer && (
         <div
-          className="pointer-events-none absolute inset-0 z-10 animate-holo-shimmer opacity-60 mix-blend-screen"
+          className={`pointer-events-none absolute inset-0 z-10 mix-blend-screen ${shimmerClass}`}
           aria-hidden
         />
       )}
