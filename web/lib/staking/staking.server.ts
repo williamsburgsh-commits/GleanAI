@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { Connection, PublicKey } from '@solana/web3.js';
 import { getServiceClient } from '@/lib/supabaseServer';
 import {
   getQuestBySlug,
@@ -7,6 +8,7 @@ import {
   type UserRow,
 } from '@/lib/quests.server';
 import { getFighterByUserId, type FighterCardRow } from '@/lib/wallet-wars/fighter.server';
+import { isBadgeTokenFrozen } from '@/lib/staking/fighterStake';
 import {
   computePendingEpochs,
   getTrainingConfig,
@@ -128,6 +130,91 @@ export async function markStaked(
   });
 
   return data as FighterCardRow;
+}
+
+/**
+ * Align Supabase stake fields with on-chain ATA freeze.
+ * Freeze is the source of truth for "is staked".
+ * Heal paths do not award the stake quest.
+ */
+export async function reconcileStakeWithChain(params: {
+  supabase: Supa;
+  fighter: FighterCardRow;
+  connection: Connection;
+  owner: PublicKey;
+}): Promise<{ fighter: FighterCardRow; status: TrainingStatus; healed: boolean }> {
+  const { supabase, connection, owner } = params;
+  let fighter = params.fighter;
+
+  if (!fighter.badge_mint) {
+    return { fighter, status: toTrainingStatus(fighter), healed: false };
+  }
+
+  const mint = new PublicKey(fighter.badge_mint);
+  const frozen = await isBadgeTokenFrozen(connection, mint, owner);
+  const dbStaked = isCurrentlyStaked(fighter);
+
+  if (frozen && !dbStaked) {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('fighter_cards')
+      .update({
+        badge_staked_at: now,
+        badge_unstaked_at: null,
+        training_epochs_claimed: fighter.training_epochs_claimed ?? 0,
+      })
+      .eq('id', fighter.id)
+      .select('*')
+      .single();
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('badge_staked_at') || msg.includes('column')) {
+        throw new Error(
+          'Staking columns missing — apply supabase migration 0012_fighter_staking.sql.'
+        );
+      }
+      throw error;
+    }
+    fighter = data as FighterCardRow;
+    await recordStakeEvent(supabase, {
+      userId: fighter.user_id,
+      mint: fighter.badge_mint!,
+      action: 'stake',
+      txSignature: null,
+    });
+    return { fighter, status: toTrainingStatus(fighter), healed: true };
+  }
+
+  if (!frozen && dbStaked) {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('fighter_cards')
+      .update({
+        badge_unstaked_at: now,
+      })
+      .eq('id', fighter.id)
+      .select('*')
+      .single();
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('badge_unstaked_at') || msg.includes('column')) {
+        throw new Error(
+          'Staking columns missing — apply supabase migration 0012_fighter_staking.sql.'
+        );
+      }
+      throw error;
+    }
+    fighter = data as FighterCardRow;
+    await recordStakeEvent(supabase, {
+      userId: fighter.user_id,
+      mint: fighter.badge_mint!,
+      action: 'unstake',
+      txSignature: null,
+    });
+    return { fighter, status: toTrainingStatus(fighter), healed: true };
+  }
+
+  return { fighter, status: toTrainingStatus(fighter), healed: false };
 }
 
 export async function collectTraining(

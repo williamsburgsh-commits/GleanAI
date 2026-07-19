@@ -61,6 +61,18 @@ function formatCooldown(ms: number): string {
   return `${Math.floor(s / 60)}m ${s % 60}s`;
 }
 
+function formatStakedSince(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function TrainingGroundsPage() {
   const { inTelegram } = useTelegram();
   const { cluster } = getPublicConfig();
@@ -110,6 +122,16 @@ export default function TrainingGroundsPage() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || 'Could not build stake tx.');
+
+      if (body.alreadyStaked && body.status) {
+        setStatus(body.status as TrainingStatus);
+        setError(null);
+        setMsg('Badge already training.');
+        return;
+      }
+      if (!body.transaction) {
+        throw new Error(body.error || 'Could not build stake tx.');
+      }
 
       const signature = await signAndSendBase64Tx(body.transaction);
 
@@ -286,6 +308,11 @@ export default function TrainingGroundsPage() {
                 <dd className={status.staked ? 'text-phosphor' : 'text-amber'}>
                   {status.staked ? 'STAKED' : 'READY'}
                 </dd>
+                {status.staked && formatStakedSince(status.stakedAt) && (
+                  <dd className="mt-0.5 text-xs text-ash">
+                    Since {formatStakedSince(status.stakedAt)}
+                  </dd>
+                )}
               </div>
               <div>
                 <dt className="text-ash">Pending</dt>
@@ -294,13 +321,12 @@ export default function TrainingGroundsPage() {
                 </dd>
               </div>
               <div>
+                <dt className="text-ash">Trained</dt>
+                <dd className="text-phosphor">+{status.trainingPowerBonus} POWER</dd>
+              </div>
+              <div>
                 <dt className="text-ash">POWER</dt>
-                <dd className="text-phosphor">
-                  {status.fighterPower}
-                  {status.trainingPowerBonus
-                    ? ` (+${status.trainingPowerBonus} trained)`
-                    : ''}
-                </dd>
+                <dd className="text-bone">{status.fighterPower}</dd>
               </div>
             </dl>
 

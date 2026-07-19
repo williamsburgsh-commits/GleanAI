@@ -6,8 +6,10 @@ import { getConnection } from '@/lib/solana/connection';
 import { normalizeCluster } from '@/lib/solana/cluster';
 import {
   buildStakeTransaction,
+  isBadgeTokenFrozen,
   serializeTxBase64,
 } from '@/lib/staking/fighterStake';
+import { reconcileStakeWithChain } from '@/lib/staking/staking.server';
 import {
   isCurrentlyStaked,
   restakeCooldownRemainingMs,
@@ -44,9 +46,28 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    if (isCurrentlyStaked(fighter)) {
-      return NextResponse.json({ error: 'Badge is already staked.' }, { status: 400 });
+
+    const cluster = normalizeCluster(process.env.SOLANA_CLUSTER);
+    const conn = getConnection({ cluster });
+    const owner = new PublicKey(user.wallet_address);
+    const mint = new PublicKey(fighter.badge_mint);
+
+    const dbStaked = isCurrentlyStaked(fighter);
+    const frozen = await isBadgeTokenFrozen(conn, mint, owner);
+
+    if (dbStaked || frozen) {
+      const { status } = await reconcileStakeWithChain({
+        supabase,
+        fighter,
+        connection: conn,
+        owner,
+      });
+      return NextResponse.json({
+        alreadyStaked: true,
+        status,
+      });
     }
+
     const cooldown = restakeCooldownRemainingMs({
       unstakedAt: fighter.badge_unstaked_at,
     });
@@ -60,16 +81,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const cluster = normalizeCluster(process.env.SOLANA_CLUSTER);
-    const conn = getConnection({ cluster });
     const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash(
       'confirmed'
     );
 
     const built = await buildStakeTransaction({
       connection: conn,
-      owner: new PublicKey(user.wallet_address),
-      mint: new PublicKey(fighter.badge_mint),
+      owner,
+      mint,
       blockhash,
       lastValidBlockHeight,
     });
@@ -86,6 +105,29 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('[api/staking/stake-tx]', err);
     const message = err instanceof Error ? err.message : 'Could not build stake tx.';
+    // Race: token became frozen between checks — recover into staked UI.
+    if (message.includes('already frozen')) {
+      try {
+        const supabase = getServiceClient();
+        const user = await getUserByTelegramIdFull(supabase, telegramId);
+        const fighter = user
+          ? await getFighterByUserId(supabase, user.id)
+          : null;
+        if (user?.wallet_address && fighter?.badge_mint) {
+          const cluster = normalizeCluster(process.env.SOLANA_CLUSTER);
+          const conn = getConnection({ cluster });
+          const { status } = await reconcileStakeWithChain({
+            supabase,
+            fighter,
+            connection: conn,
+            owner: new PublicKey(user.wallet_address),
+          });
+          return NextResponse.json({ alreadyStaked: true, status });
+        }
+      } catch (healErr) {
+        console.warn('[api/staking/stake-tx] heal', healErr);
+      }
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

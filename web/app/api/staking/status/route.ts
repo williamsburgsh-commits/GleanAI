@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
+import { PublicKey } from '@solana/web3.js';
 import { getServiceClient } from '@/lib/supabaseServer';
 import { getUserByTelegramIdFull, getFighterByUserId } from '@/lib/wallet-wars/fighter.server';
-import { toTrainingStatus } from '@/lib/staking/staking.server';
+import { getConnection } from '@/lib/solana/connection';
+import { normalizeCluster } from '@/lib/solana/cluster';
+import {
+  reconcileStakeWithChain,
+  toTrainingStatus,
+} from '@/lib/staking/staking.server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,12 +26,30 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 });
     }
     const fighter = await getFighterByUserId(supabase, user.id);
+
+    if (fighter?.badge_mint && user.wallet_address) {
+      const cluster = normalizeCluster(process.env.SOLANA_CLUSTER);
+      const conn = getConnection({ cluster });
+      const { status } = await reconcileStakeWithChain({
+        supabase,
+        fighter,
+        connection: conn,
+        owner: new PublicKey(user.wallet_address),
+      });
+      return NextResponse.json({
+        walletLinked: true,
+        status,
+      });
+    }
+
     return NextResponse.json({
       walletLinked: Boolean(user.wallet_address),
       status: toTrainingStatus(fighter),
     });
   } catch (err) {
     console.error('[api/staking/status]', err);
-    return NextResponse.json({ error: 'Could not load staking status.' }, { status: 500 });
+    const message =
+      err instanceof Error ? err.message : 'Could not load staking status.';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
