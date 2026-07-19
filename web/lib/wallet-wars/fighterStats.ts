@@ -5,7 +5,7 @@ import {
   hasRarityBumpQuest,
   type QuestBonus,
 } from './questBoosts';
-import { fighterAvatarUrl } from './avatar';
+import { resolveFighterAvatar } from './avatar';
 
 export interface BaseStats {
   strike: number;
@@ -80,7 +80,11 @@ export function buildFighterStats(
     totalScore: total,
     rarity,
     questBonus,
-    avatarUrl: fighterAvatarUrl(walletAddress),
+    avatarUrl: resolveFighterAvatar({
+      walletAddress,
+      ...combined,
+      rarity,
+    }),
   };
 }
 

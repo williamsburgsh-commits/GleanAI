@@ -4,6 +4,8 @@ import {
   getUserByTelegramIdFull,
   scanAndUpsertFighter,
 } from '@/lib/wallet-wars/fighter.server';
+import { resolveFighterAvatar } from '@/lib/wallet-wars/avatar';
+import type { FighterRarity } from '@/lib/wallet-wars/rarity';
 
 export const runtime = 'nodejs';
 
@@ -38,12 +40,22 @@ export async function POST(request: Request) {
 
     const { fighter, isFirstScan } = await scanAndUpsertFighter(supabase, user);
 
+    const avatarUrl = resolveFighterAvatar({
+      walletAddress: fighter.wallet_address,
+      strike: fighter.strike,
+      shield: fighter.shield,
+      power: fighter.power,
+      armor: fighter.armor ?? 0,
+      agility: fighter.agility,
+      rarity: fighter.rarity as FighterRarity,
+    });
+
     return NextResponse.json({
       isFirstScan,
       fighter: {
         name: `${fighter.wallet_address.slice(0, 4)}…${fighter.wallet_address.slice(-4)}`,
         walletAddress: fighter.wallet_address,
-        avatarUrl: fighter.avatar_url,
+        avatarUrl,
         strike: fighter.strike,
         shield: fighter.shield,
         power: fighter.power,

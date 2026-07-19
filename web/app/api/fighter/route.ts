@@ -5,6 +5,8 @@ import {
   getUserByTelegramIdFull,
   canRescan,
 } from '@/lib/wallet-wars/fighter.server';
+import { resolveFighterAvatar } from '@/lib/wallet-wars/avatar';
+import type { FighterRarity } from '@/lib/wallet-wars/rarity';
 
 export const runtime = 'nodejs';
 
@@ -36,12 +38,22 @@ export async function GET(request: Request) {
 
     const cooldown = canRescan(fighter.scanned_at);
 
+    const avatarUrl = resolveFighterAvatar({
+      walletAddress: fighter.wallet_address,
+      strike: fighter.strike,
+      shield: fighter.shield,
+      power: fighter.power,
+      armor: fighter.armor ?? 0,
+      agility: fighter.agility,
+      rarity: fighter.rarity as FighterRarity,
+    });
+
     return NextResponse.json({
       walletLinked: Boolean(user.wallet_address),
       fighter: {
         name: shorten(fighter.wallet_address),
         walletAddress: fighter.wallet_address,
-        avatarUrl: fighter.avatar_url,
+        avatarUrl,
         strike: fighter.strike,
         shield: fighter.shield,
         power: fighter.power,

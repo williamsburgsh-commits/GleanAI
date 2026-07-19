@@ -11,6 +11,7 @@ import {
 import { STAT_KEYS, type StatKey } from '@/lib/wallet-wars/fighterStats';
 import type { QuestBonus } from '@/lib/wallet-wars/questBoosts';
 import { shortenWallet } from '@/lib/format';
+import { isKolWallet } from '@/lib/wallet-wars/kolRegistry';
 
 export interface FighterCardData {
   name: string;
@@ -83,6 +84,7 @@ export function FighterCard({
   const shortWallet = fighter.walletAddress
     ? shortenWallet(fighter.walletAddress)
     : null;
+  const isLegend = isKolWallet(fighter.walletAddress);
 
   const nameSize = isMini ? 'text-[7px]' : isBattle ? 'text-[7px]' : 'text-[9px]';
   const metaSize = isMini ? 'text-[5px]' : isBattle ? 'text-[5px]' : 'text-[6px]';
@@ -116,11 +118,20 @@ export function FighterCard({
             <p className={`mt-0.5 truncate font-term text-bone/55 ${metaSize}`}>{shortWallet}</p>
           )}
         </div>
-        <span
-          className={`shrink-0 border px-1 py-0.5 font-pixel uppercase leading-none ${gemSize} ${rarityGemClass(fighter.rarity)}`}
-        >
-          {rarityLabel(fighter.rarity)}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <span
+            className={`border px-1 py-0.5 font-pixel uppercase leading-none ${gemSize} ${rarityGemClass(fighter.rarity)}`}
+          >
+            {rarityLabel(fighter.rarity)}
+          </span>
+          {isLegend && (
+            <span
+              className={`border border-amber-400 bg-amber-400/20 px-1 py-0.5 font-pixel uppercase leading-none text-amber-300 ${gemSize}`}
+            >
+              LEGEND
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Art window — dominates card height */}

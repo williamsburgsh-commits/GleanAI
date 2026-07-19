@@ -1,7 +1,8 @@
 import { metricsToBaseStats, totalScore, type BaseStats } from './fighterStats';
 import { scoreToRarity } from './rarity';
-import { botAvatarUrl } from './avatar';
+import { botAvatarUrl, resolveFighterAvatar } from './avatar';
 import type { FighterSnapshot } from './battleResolver';
+import type { FighterRarity } from './rarity';
 
 export type BotDifficulty = 'easy' | 'normal' | 'hard';
 
@@ -82,13 +83,14 @@ export function createBotFighter(
 
   const nameIdx = Math.floor(rand() * BOT_NAMES.length);
   const total = totalScore(stats);
+  const rarity = scoreToRarity(total);
 
   return {
     name: BOT_NAMES[nameIdx] ?? 'Bot Fighter',
-    avatarUrl: botAvatarUrl(botSeed),
+    avatarUrl: botAvatarUrl({ ...stats, rarity }),
     stats,
     totalScore: total,
-    rarity: scoreToRarity(total),
+    rarity,
     isBot: true,
   };
 }
@@ -108,16 +110,26 @@ export function fighterRowToSnapshot(
   },
   displayName?: string
 ): FighterSnapshot {
+  const armor = row.armor ?? 0;
+  const rarity = row.rarity as FighterRarity;
   return {
     id: row.id,
     name: displayName ?? shorten(row.wallet_address),
     walletAddress: row.wallet_address,
-    avatarUrl: row.avatar_url,
+    avatarUrl: resolveFighterAvatar({
+      walletAddress: row.wallet_address,
+      strike: row.strike,
+      shield: row.shield,
+      power: row.power,
+      armor,
+      agility: row.agility,
+      rarity,
+    }),
     stats: {
       strike: row.strike,
       shield: row.shield,
       power: row.power,
-      armor: row.armor ?? 0,
+      armor,
       agility: row.agility,
     },
     totalScore: row.total_score,

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabaseServer';
 import { GLEAN_BADGE_NAME, GLEAN_BADGE_SYMBOL } from '@/lib/solana/programs';
-import { fighterAvatarPngUrl } from '@/lib/wallet-wars/avatar';
+import { resolveFighterAvatarPng } from '@/lib/wallet-wars/avatar';
+import type { FighterRarity } from '@/lib/wallet-wars/rarity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -42,10 +43,16 @@ export async function GET(request: Request) {
     const rarity = String(fighter.rarity);
     const rarityLabel = rarity.charAt(0).toUpperCase() + rarity.slice(1);
     const base = appBaseUrl(request);
-    const image =
-      typeof fighter.avatar_url === 'string' && fighter.avatar_url.includes('/png')
-        ? fighter.avatar_url
-        : fighterAvatarPngUrl(fighter.wallet_address);
+    const pngPath = resolveFighterAvatarPng({
+      walletAddress: fighter.wallet_address,
+      strike: Number(fighter.strike) || 0,
+      shield: Number(fighter.shield) || 0,
+      power: Number(fighter.power) || 0,
+      armor: Number(fighter.armor) || 0,
+      agility: Number(fighter.agility) || 0,
+      rarity: rarity as FighterRarity,
+    });
+    const image = pngPath.startsWith('http') ? pngPath : `${base}${pngPath}`;
 
     const body = {
       name: `${GLEAN_BADGE_NAME} · ${rarityLabel}`,
