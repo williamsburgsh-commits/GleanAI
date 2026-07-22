@@ -21,6 +21,8 @@ export interface TelegramInitUser {
 
 export interface VerifiedInitData {
   user: TelegramInitUser;
+  /** String form — safe for DB lookups (no JSON number precision loss). */
+  telegramId: string;
   authDate: number;
   startParam?: string;
 }
@@ -67,17 +69,35 @@ export function verifyInitData(
 
   const userRaw = params.get('user');
   if (!userRaw) return null;
+  const telegramId = parseTelegramUserId(userRaw);
+  if (!telegramId) return null;
+
   let user: TelegramInitUser;
   try {
     user = JSON.parse(userRaw) as TelegramInitUser;
   } catch {
     return null;
   }
-  if (!user?.id) return null;
+  // Keep numeric fields for display; id is always string (avoids JSON precision loss).
+  user.id = Number(telegramId);
 
   return {
     user,
+    telegramId,
     authDate,
     startParam: params.get('start_param') || undefined,
   };
+}
+
+/** Parse Telegram user id as string so large ids never lose precision in JSON. */
+function parseTelegramUserId(userRaw: string): string | null {
+  const match = userRaw.match(/"id"\s*:\s*(\d+)/);
+  if (match?.[1]) return match[1];
+  try {
+    const parsed = JSON.parse(userRaw) as { id?: number | string };
+    if (parsed.id == null || parsed.id === '') return null;
+    return String(parsed.id);
+  } catch {
+    return null;
+  }
 }

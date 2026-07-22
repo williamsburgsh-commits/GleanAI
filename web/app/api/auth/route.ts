@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
   try {
     const supabase = getServiceClient();
-    const telegramId = String(verified.user.id);
+    const telegramId = verified.telegramId;
     const username = verified.user.username ?? null;
     const user = await getOrCreateUserByTelegramId(supabase, telegramId, {
       username,
@@ -52,6 +52,24 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error('[api/auth] error', err);
-    return NextResponse.json({ error: 'Could not sign you in.' }, { status: 500 });
+    const detail =
+      err && typeof err === 'object' && 'message' in err
+        ? String((err as { message?: string }).message)
+        : err instanceof Error
+          ? err.message
+          : 'unknown';
+    const hint =
+      detail.includes('SUPABASE') || detail.includes('service_role')
+        ? ' Check Vercel env: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
+        : detail.includes('TELEGRAM')
+          ? ' Check Vercel env: TELEGRAM_BOT_TOKEN must match your bot.'
+          : '';
+    return NextResponse.json(
+      {
+        error: 'Could not sign you in.',
+        ...(process.env.NODE_ENV !== 'production' ? { detail: detail + hint } : {}),
+      },
+      { status: 500 }
+    );
   }
 }

@@ -42,7 +42,19 @@ export async function getOrCreateUserByTelegramId(
       .select('id, telegram_id, wallet_address, points')
       .single();
     if (!error) return data as UserRow;
-    if (error.code === '23505' && /referral_code/.test(error.message)) continue;
+    if (error.code === '23505') {
+      if (/referral_code/.test(error.message)) continue;
+      // Another request (e.g. bot /start) created this user first — fetch it.
+      if (/telegram_id/.test(error.message)) {
+        const { data: raced, error: raceErr } = await supabase
+          .from('users')
+          .select('id, telegram_id, wallet_address, points')
+          .eq('telegram_id', telegramId)
+          .maybeSingle();
+        if (raceErr) throw raceErr;
+        if (raced) return raced as UserRow;
+      }
+    }
     throw error;
   }
   throw new Error('Could not create user (referral code collisions).');
