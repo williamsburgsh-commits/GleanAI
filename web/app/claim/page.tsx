@@ -69,7 +69,16 @@ function ClaimClient() {
   async function onClaim() {
     if (!data?.epoch || !data.leaf || data.leaf.claimedAt) return;
     const programIdStr = data.config.programId;
-    const mintStr = data.config.mint || data.epoch.mint;
+    const mintStr = data.epoch.mint || data.config.mint;
+    if (
+      data.config.mint &&
+      data.epoch.mint &&
+      data.config.mint !== data.epoch.mint
+    ) {
+      console.warn(
+        '[claim] CLAIM_MINT env does not match published epoch mint; using epoch mint.'
+      );
+    }
     if (!isClaimsConfigured(programIdStr, mintStr)) {
       setError('CLAIM_PROGRAM_ID / CLAIM_MINT not configured.');
       return;

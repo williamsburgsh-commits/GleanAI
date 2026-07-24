@@ -232,12 +232,15 @@ export async function getClaimForTelegramUser(
   if (epochErr) throw epochErr;
 
   const base = getClaimConfig();
+  const epochMint = epoch?.mint?.trim() || '';
+  const mint = epochMint || base.mint;
   const config = {
     ...base,
+    mint,
     badgeStaked,
     stakingRequired: true,
     // Brief: mint + stake NFTs to unlock claims.
-    claimsReady: base.claimsReady && badgeStaked,
+    claimsReady: Boolean(base.programId && mint) && badgeStaked,
   };
 
   if (!epoch) return { epoch: null, leaf: null, config };
