@@ -19,6 +19,12 @@ interface ClaimPayload {
     merkleRoot: string;
     mint: string;
     pointsToUnits: number;
+    status: string;
+  } | null;
+  pendingEpoch: {
+    id: string;
+    slug: string;
+    status: string;
   } | null;
   leaf: {
     leafIndex: number;
@@ -35,6 +41,7 @@ interface ClaimPayload {
     claimsReady: boolean;
     badgeStaked?: boolean;
     stakingRequired?: boolean;
+    epochFunded?: boolean;
   };
 }
 
@@ -68,6 +75,10 @@ function ClaimClient() {
 
   async function onClaim() {
     if (!data?.epoch || !data.leaf || data.leaf.claimedAt) return;
+    if (data.epoch.status !== 'funded') {
+      setError('Epoch published — waiting for on-chain root.');
+      return;
+    }
     const programIdStr = data.config.programId;
     const mintStr = data.epoch.mint || data.config.mint;
     if (
@@ -205,6 +216,10 @@ function ClaimClient() {
             </p>
             {data.leaf.claimedAt ? (
               <p className="font-term text-[16px] text-phosphor">Already claimed.</p>
+            ) : data.epoch.status !== 'funded' ? (
+              <p className="font-term text-[16px] text-amber">
+                Epoch published — waiting for on-chain root. Check back soon.
+              </p>
             ) : data.config.stakingRequired && !data.config.badgeStaked ? (
               <div>
                 <p className="mb-3 font-term text-[16px] text-amber">
@@ -228,6 +243,10 @@ function ClaimClient() {
               </button>
             )}
           </>
+        ) : data?.pendingEpoch && !data.epoch ? (
+          <p className="font-term text-[16px] text-amber">
+            Epoch {data.pendingEpoch.slug} published — waiting for on-chain root.
+          </p>
         ) : data && !data.leaf ? (
           <p className="font-term text-[16px] text-ash">No claim leaf for this account.</p>
         ) : null}

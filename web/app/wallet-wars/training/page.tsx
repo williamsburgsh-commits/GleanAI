@@ -272,6 +272,12 @@ export default function TrainingGroundsPage() {
           Stake your Fighter Badge NFT on {cluster}. Freeze locks the badge in your wallet while
           it trains — +{status?.powerPerEpoch ?? 2} POWER per {epochLabel} epoch.
         </p>
+        <p className="mb-4 font-term text-sm text-amber">
+          A staked badge is required to claim weekly $GLEAN.{' '}
+          <Link href="/app" className="text-cyan underline">
+            Open Claim tab
+          </Link>
+        </p>
 
         <div
           className={`training-gym mb-5 ${status?.staked ? 'training-gym--active' : ''}`}

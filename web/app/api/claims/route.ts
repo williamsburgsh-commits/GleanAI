@@ -30,6 +30,14 @@ export async function GET(request: Request) {
             publishedAt: info.epoch.published_at,
           }
         : null,
+      pendingEpoch: info.pendingEpoch
+        ? {
+            id: info.pendingEpoch.id,
+            slug: info.pendingEpoch.slug,
+            status: info.pendingEpoch.status,
+            publishedAt: info.pendingEpoch.published_at,
+          }
+        : null,
       leaf: info.leaf,
       config: {
         mint: info.config.mint || null,
@@ -38,6 +46,7 @@ export async function GET(request: Request) {
         claimsReady: info.config.claimsReady,
         badgeStaked: info.config.badgeStaked,
         stakingRequired: info.config.stakingRequired,
+        epochFunded: info.config.epochFunded,
       },
     });
   } catch (err) {

@@ -7,6 +7,7 @@ import {
 } from '@/lib/wallet-wars/fighter.server';
 import { resolveFighterAvatar } from '@/lib/wallet-wars/avatar';
 import type { FighterRarity } from '@/lib/wallet-wars/rarity';
+import { isCurrentlyStaked } from '@/lib/staking/training';
 
 export const runtime = 'nodejs';
 
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
     }
 
     const cooldown = canRescan(fighter.scanned_at);
+    const badgeStaked = isCurrentlyStaked(fighter);
 
     const avatarUrl = resolveFighterAvatar({
       walletAddress: fighter.wallet_address,
@@ -64,12 +66,8 @@ export async function GET(request: Request) {
         questBonus: fighter.quest_bonus,
         scannedAt: fighter.scanned_at,
         badgeMint: fighter.badge_mint ?? null,
-        badgeStaked: Boolean(
-          fighter.badge_staked_at &&
-            (!fighter.badge_unstaked_at ||
-              new Date(fighter.badge_staked_at).getTime() >
-                new Date(fighter.badge_unstaked_at).getTime())
-        ),
+        badgeStaked,
+        claimsEligible: badgeStaked,
         canRescan: cooldown.allowed,
         nextRescanAt: cooldown.nextAt?.toISOString() ?? null,
       },

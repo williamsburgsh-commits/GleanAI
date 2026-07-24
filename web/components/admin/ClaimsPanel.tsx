@@ -81,6 +81,38 @@ export function ClaimsPanel() {
     }
   }
 
+  async function onSetRootOnchain(id: string, slug: string) {
+    if (
+      !window.confirm(
+        `Sign set_root on-chain for ${slug}? Requires CLAIM_AUTHORITY_SECRET on the server.`
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/admin/claims/set-root', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimEpochId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Set root failed.');
+      if (data.alreadyFunded) {
+        setMsg(`${slug} was already funded.`);
+      } else {
+        setMsg(`Set root for ${slug} · ${String(data.signature).slice(0, 12)}…`);
+      }
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Set root failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onMarkFunded(id: string) {
     const onchainTx = window.prompt('Paste set_root / fund tx signature:')?.trim();
     if (!onchainTx) return;
@@ -115,6 +147,12 @@ export function ClaimsPanel() {
         rate{' '}
         <span className="text-phosphor">{config?.pointsToUnits?.toLocaleString() ?? '—'}</span> units /
         pt
+      </p>
+
+      <p className="mb-3 font-term text-[14px] text-mute">
+        Weekly ops: (1) Publish previous week → (2) Set root on-chain → (3) Fund vault with SPL
+        tokens → (4) Smoke-test claim → (5) Announce in Telegram. CLI fallback:{' '}
+        <code className="text-cyan">SET_ROOT=1 node scripts/publish-claim-epoch.mjs</code>
       </p>
 
       <button
@@ -163,15 +201,26 @@ export function ClaimsPanel() {
                 >
                   copy root
                 </button>
-                {e.status !== 'funded' ? (
-                  <button
-                    type="button"
-                    onClick={() => onMarkFunded(e.id)}
-                    disabled={busy}
-                    className="chip-btn"
-                  >
-                    set-root tx
-                  </button>
+                {e.status === 'published' ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onSetRootOnchain(e.id, e.slug)}
+                      disabled={busy}
+                      className="chip-btn"
+                    >
+                      set root on-chain
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onMarkFunded(e.id)}
+                      disabled={busy}
+                      className="chip-btn"
+                      title="Paste CLI set_root tx signature"
+                    >
+                      mark funded (manual)
+                    </button>
+                  </>
                 ) : null}
               </span>
             </li>

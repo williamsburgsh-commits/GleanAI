@@ -5,6 +5,7 @@ import { CrtPanel } from '@/components/CrtPanel';
 import { BrandMark } from '@/components/BrandMark';
 import { RecipientPicker, type RecipientUser } from '@/components/admin/RecipientPicker';
 import { ClaimsPanel } from '@/components/admin/ClaimsPanel';
+import { HeliusPanel } from '@/components/admin/HeliusPanel';
 
 type Status = 'pending' | 'paid' | 'cancelled';
 
@@ -204,6 +205,7 @@ export default function AdminPage() {
       </header>
 
       <ClaimsPanel />
+      <HeliusPanel />
 
       {/* Summary */}
       <div className="mb-6 grid grid-cols-3 gap-3">

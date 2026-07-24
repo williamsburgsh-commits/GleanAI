@@ -16,6 +16,12 @@ interface ClaimPayload {
     status: string;
     publishedAt: string | null;
   } | null;
+  pendingEpoch: {
+    id: string;
+    slug: string;
+    status: string;
+    publishedAt: string | null;
+  } | null;
   leaf: {
     leafIndex: number;
     points: number;
@@ -32,6 +38,7 @@ interface ClaimPayload {
     claimsReady: boolean;
     badgeStaked?: boolean;
     stakingRequired?: boolean;
+    epochFunded?: boolean;
   };
 }
 
@@ -77,8 +84,23 @@ export function ClaimTab({ telegramId, webApp, haptic }: ClaimTabProps) {
     data?.config.mint ?? undefined
   );
 
+  function openTrainingGrounds() {
+    const origin = window.location.origin;
+    const url = `${origin}/wallet-wars/training`;
+    if (webApp) {
+      webApp.openLink(url);
+    } else {
+      window.location.href = url;
+    }
+  }
+
   async function onClaim() {
     if (!telegramId || !data?.epoch || !data.leaf || data.leaf.claimedAt) return;
+    if (data.epoch.status !== 'funded') {
+      setTxMsg('Epoch published — waiting for on-chain root. Check back soon.');
+      haptic('warning');
+      return;
+    }
     if (!ready) {
       setTxMsg('Claim vault not wired yet — set CLAIM_PROGRAM_ID + CLAIM_MINT (devnet).');
       haptic('warning');
@@ -137,6 +159,17 @@ export function ClaimTab({ telegramId, webApp, haptic }: ClaimTabProps) {
   }
 
   if (!data.epoch) {
+    if (data.pendingEpoch) {
+      return (
+        <CrtPanel label="CLAIM // $GLEAN" tone="amber">
+          <p className="mb-2 font-pixel text-[10px] text-amber">EPOCH {data.pendingEpoch.slug}</p>
+          <p className="font-term text-[16px] leading-snug text-ash">
+            Epoch published — waiting for on-chain root. Claims unlock once the admin sets the Merkle
+            root on-chain.
+          </p>
+        </CrtPanel>
+      );
+    }
     return (
       <CrtPanel label="CLAIM // $GLEAN" tone="cyan">
         <p className="font-term text-[16px] leading-snug text-ash">
@@ -161,6 +194,8 @@ export function ClaimTab({ telegramId, webApp, haptic }: ClaimTabProps) {
   const claimed = Boolean(data.leaf.claimedAt);
   const tokens = formatUnits(data.leaf.amount, data.epoch.pointsToUnits);
   const needsStake = Boolean(data.config.stakingRequired && !data.config.badgeStaked);
+  const awaitingRoot = data.epoch.status !== 'funded';
+  const canClaim = ready && data.config.claimsReady && !needsStake && !awaitingRoot;
 
   return (
     <>
@@ -186,10 +221,20 @@ export function ClaimTab({ telegramId, webApp, haptic }: ClaimTabProps) {
             <p className="mb-3 font-term text-[15px] leading-snug text-amber">
               Stake your Fighter Badge in Training Grounds to unlock claims.
             </p>
-            <a href="/wallet-wars/training" className="arcade-btn-cyan inline-block w-full text-center text-[10px]">
+            <button
+              type="button"
+              onClick={openTrainingGrounds}
+              className="arcade-btn-cyan w-full text-[10px]"
+            >
               OPEN TRAINING GROUNDS
-            </a>
+            </button>
           </div>
+        ) : null}
+
+        {awaitingRoot && !claimed && !needsStake ? (
+          <p className="mb-4 font-term text-[15px] leading-snug text-amber">
+            Epoch published — waiting for on-chain root. Check back soon.
+          </p>
         ) : null}
 
         {claimed ? (
@@ -201,16 +246,18 @@ export function ClaimTab({ telegramId, webApp, haptic }: ClaimTabProps) {
           <button
             type="button"
             onClick={onClaim}
-            disabled={busy || needsStake}
+            disabled={busy || !canClaim}
             className="arcade-btn w-full"
           >
             {busy
               ? 'Opening…'
               : needsStake
                 ? 'Stake badge to unlock'
-                : ready
-                  ? 'Claim tokens'
-                  : 'Eligible — vault not live'}
+                : awaitingRoot
+                  ? 'Waiting for on-chain root'
+                  : ready
+                    ? 'Claim tokens'
+                    : 'Eligible — vault not live'}
           </button>
         )}
 

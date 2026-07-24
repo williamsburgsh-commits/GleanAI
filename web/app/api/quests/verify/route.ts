@@ -8,6 +8,10 @@ import {
 } from '@/lib/quests.server';
 import { runVerification } from '@/lib/solana/verify';
 import { getUsedTxSignaturesForQuestType } from '@/lib/telegramCommunity';
+import {
+  formatQuestClearedMessage,
+  sendTelegramMessage,
+} from '@/lib/telegramNotify';
 
 export const runtime = 'nodejs';
 
@@ -111,6 +115,13 @@ export async function POST(request: Request) {
       quest,
       txSignature: result.txSignature,
     });
+
+    if (awarded) {
+      void sendTelegramMessage(
+        telegramId,
+        formatQuestClearedMessage({ title: quest.title, points: quest.points })
+      );
+    }
 
     return NextResponse.json({
       passed: true,

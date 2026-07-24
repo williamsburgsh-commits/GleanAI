@@ -113,10 +113,15 @@ export async function POST(request: Request) {
     // Find or create the user for this Telegram id.
     const { data: existing, error: findErr } = await supabase
       .from('users')
-      .select('id')
+      .select('id, wallet_address')
       .eq('telegram_id', telegramId)
       .maybeSingle();
     if (findErr) throw findErr;
+
+    const previousWallet =
+      existing?.wallet_address && existing.wallet_address !== walletAddress
+        ? (existing.wallet_address as string)
+        : null;
 
     if (existing) {
       const { error: updateErr } = await supabase
@@ -161,6 +166,9 @@ export async function POST(request: Request) {
     }
 
     // Best-effort: watch this wallet for auto quest completion.
+    if (previousWallet) {
+      void removeWebhookAddresses([previousWallet]);
+    }
     void addWebhookAddresses([walletAddress]);
 
     return NextResponse.json({ ok: true, walletAddress });
