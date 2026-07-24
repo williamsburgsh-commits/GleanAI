@@ -10,40 +10,10 @@ import { getPublicConfig } from '@/lib/config';
 import { buildFighterBadgeMintTransaction, getBadgeMetadataUri } from '@/lib/mint/fighterBadge';
 import { PixelArrowLeft } from '@/components/PixelArt';
 import { GLEAN_BADGE_NAME } from '@/lib/solana/programs';
-
-function walletErrorMessage(err: unknown): string {
-  if (!err) return 'Mint failed.';
-  if (typeof err === 'string') return err;
-  const e = err as {
-    message?: string;
-    code?: number;
-    error?: { message?: string };
-    data?: { message?: string };
-  };
-  const raw =
-    e.message ||
-    e.error?.message ||
-    e.data?.message ||
-    (err instanceof Error ? err.message : '');
-  if (!raw || /^unexpected error$/i.test(raw.trim())) {
-    return 'Phantom failed to sign or send. Confirm Devnet + enough SOL, then try again.';
-  }
-  if (e.code === 4001 || /reject|denied|cancel/i.test(raw)) {
-    return 'Signature rejected in Phantom.';
-  }
-  const lamports = raw.match(
-    /insufficient lamports\s+(\d+),\s*need\s+(\d+)/i
-  );
-  if (lamports) {
-    const have = (Number(lamports[1]) / 1e9).toFixed(4);
-    const need = (Number(lamports[2]) / 1e9).toFixed(4);
-    return `Not enough Devnet SOL for NFT rent. Wallet has ~${have} SOL; mint needs ~${need} SOL (plus a small fee). Airdrop more SOL in Phantom, then retry.`;
-  }
-  if (/insufficient lamports/i.test(raw)) {
-    return 'Not enough Devnet SOL to mint. Airdrop ~0.05 SOL in Phantom (Devnet), then retry.';
-  }
-  return raw;
-}
+import {
+  serializeTransactionBase64,
+  walletErrorMessage,
+} from '@/lib/solana/walletErrors';
 
 export default function MintBadgePage() {
   const { inTelegram } = useTelegram();
@@ -178,15 +148,10 @@ export default function MintBadgePage() {
         throw new Error('Phantom signTransaction is unavailable. Update Phantom and retry.');
       }
       const signed = await provider.signTransaction(transaction);
-      const serialized = signed.serialize();
-      let binary = '';
-      for (let i = 0; i < serialized.length; i += 1) {
-        binary += String.fromCharCode(serialized[i]!);
-      }
       const sendRes = await fetch('/api/solana/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transaction: btoa(binary) }),
+        body: JSON.stringify({ transaction: serializeTransactionBase64(signed) }),
       });
       const sendBody = await sendRes.json().catch(() => ({}));
       if (!sendRes.ok) {

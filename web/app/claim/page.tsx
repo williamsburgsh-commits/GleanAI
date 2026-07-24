@@ -7,6 +7,10 @@ import { BrandMark } from '@/components/BrandMark';
 import { CrtPanel } from '@/components/CrtPanel';
 import { buildClaimIx, isClaimsConfigured } from '@/lib/claims/distributor';
 import { getPhantomProvider } from '@/lib/phantom';
+import {
+  serializeTransactionBase64,
+  walletErrorMessage,
+} from '@/lib/solana/walletErrors';
 
 interface ClaimPayload {
   epoch: {
@@ -118,7 +122,21 @@ function ClaimClient() {
         lastValidBlockHeight,
       }).add(ix);
 
-      const { signature: sig } = await provider.signAndSendTransaction(tx);
+      // Phantom sign only; Alchemy broadcasts (avoids public RPC 403 / "Unexpected error").
+      if (typeof provider.signTransaction !== 'function') {
+        throw new Error('Phantom signTransaction is unavailable. Update Phantom and retry.');
+      }
+      const signed = await provider.signTransaction(tx);
+      const sendRes = await fetch('/api/solana/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transaction: serializeTransactionBase64(signed) }),
+      });
+      const sendBody = await sendRes.json().catch(() => ({}));
+      if (!sendRes.ok) {
+        throw new Error(sendBody.error || 'Could not broadcast claim transaction.');
+      }
+      const sig = String(sendBody.signature);
 
       const confirmRes = await fetch('/api/claims/confirm', {
         method: 'POST',
@@ -126,11 +144,12 @@ function ClaimClient() {
         body: JSON.stringify({ signature: sig, blockhash, lastValidBlockHeight }),
       });
       const confirmBody = await confirmRes.json().catch(() => ({}));
-      if (!confirmRes.ok) {
-        throw new Error(confirmBody.error || 'Transaction sent but confirmation failed.');
-      }
+      const confirmHardFail =
+        confirmRes.status >= 400 &&
+        confirmRes.status !== 202 &&
+        !confirmBody.pending;
 
-      await fetch('/api/claims/mark-claimed', {
+      const markRes = await fetch('/api/claims/mark-claimed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -139,11 +158,22 @@ function ClaimClient() {
           claimTx: sig,
         }),
       });
+      const markBody = await markRes.json().catch(() => ({}));
+
+      if (!markRes.ok) {
+        if (confirmHardFail) {
+          throw new Error(confirmBody.error || 'Transaction sent but confirmation failed.');
+        }
+        throw new Error(
+          markBody.error ||
+            `Claim likely succeeded (${sig.slice(0, 8)}…) but site sync lagged. Refresh in a moment.`
+        );
+      }
 
       setMsg(`Claimed · ${sig.slice(0, 12)}…`);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Claim failed.');
+      setError(walletErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -193,6 +223,10 @@ function ClaimClient() {
           <p className="font-term text-[16px] text-ash">No claim leaf for this account.</p>
         ) : null}
       </CrtPanel>
+      <p className="font-term text-xs text-ash">
+        Phantom must be on Devnet. If signing fails in Telegram, open this page in an external
+        browser with Phantom connected.
+      </p>
     </main>
   );
 }
